@@ -1,0 +1,73 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Environment
+.env
+!.env.example
+
+# Database
+data/nagarnetra.db
+data/nagarnetra.db-shm
+data/nagarnetra.db-wal
+
+# Snapshots
+data/snapshots/
+
+# Video files (large — don't commit)
+data/sample_videos/*.mp4
+data/sample_videos/*.avi
+data/sample_videos/*.mov
+data/sample_videos/*.mkv
+data/sample_videos/*.webm
+
+# YOLO model weights (large — don't commit)
+models/*.pt
+models/*.onnx
+!models/README.txt
+
+# YOLO training runs
+runs/
+
+# Ultralytics cache
+~/.ultralytics/
+
+# Node.js
+node_modules/
+frontend/dist/
+frontend/.cache/
+
+# Jupyter
+.ipynb_checkpoints/
+notebooks/.ipynb_checkpoints/
+
+# Docker
+.dockerignore
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log

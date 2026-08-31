@@ -1,0 +1,86 @@
+[
+  {
+    "camera_id": "cam_01",
+    "name": "Connaught Place",
+    "lat": 28.6315,
+    "lng": 77.2167,
+    "road_segment": "Rajpath-CP Ring"
+  },
+  {
+    "camera_id": "cam_02",
+    "name": "ITO",
+    "lat": 28.6304,
+    "lng": 77.2432,
+    "road_segment": "ITO-Ring Road"
+  },
+  {
+    "camera_id": "cam_03",
+    "name": "AIIMS",
+    "lat": 28.5672,
+    "lng": 77.2100,
+    "road_segment": "Outer Ring Road-South"
+  },
+  {
+    "camera_id": "cam_04",
+    "name": "Dhaula Kuan",
+    "lat": 28.5921,
+    "lng": 77.1622,
+    "road_segment": "NH-48 Arterial"
+  },
+  {
+    "camera_id": "cam_05",
+    "name": "Karol Bagh",
+    "lat": 28.6519,
+    "lng": 77.1909,
+    "road_segment": "Pusa Road Corridor"
+  },
+  {
+    "camera_id": "cam_06",
+    "name": "Kashmere Gate ISBT",
+    "lat": 28.6669,
+    "lng": 77.2280,
+    "road_segment": "NH-44 North Entry"
+  },
+  {
+    "camera_id": "cam_07",
+    "name": "Nehru Place",
+    "lat": 28.5487,
+    "lng": 77.2519,
+    "road_segment": "Mathura Road-South"
+  },
+  {
+    "camera_id": "cam_08",
+    "name": "Rajouri Garden",
+    "lat": 28.6427,
+    "lng": 77.1200,
+    "road_segment": "NH-48 West Corridor"
+  },
+  {
+    "camera_id": "cam_09",
+    "name": "Akshardham",
+    "lat": 28.6127,
+    "lng": 77.2773,
+    "road_segment": "NH-24 East Entry"
+  },
+  {
+    "camera_id": "cam_10",
+    "name": "Rohini",
+    "lat": 28.7041,
+    "lng": 77.1025,
+    "road_segment": "Rohini Expressway"
+  },
+  {
+    "camera_id": "cam_11",
+    "name": "India Gate",
+    "lat": 28.6129,
+    "lng": 77.2295,
+    "road_segment": "Rajpath Central"
+  },
+  {
+    "camera_id": "cam_12",
+    "name": "Lajpat Nagar",
+    "lat": 28.5677,
+    "lng": 77.2433,
+    "road_segment": "Ring Road-South East"
+  }
+]

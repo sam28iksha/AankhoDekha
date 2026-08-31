@@ -1,0 +1,23 @@
+{
+  "_instructions": "DO NOT add plates here manually before running ingestion. After running 'python scripts/ingest_videos.py' and 'python scripts/list_detected_plates.py', pick 3-4 plate numbers from the output and add them below. See RUN.md for the full workflow.",
+  "plates": [
+    {
+      "_placeholder": true,
+      "plate_number": "REPLACE_WITH_REAL_DETECTED_PLATE_1",
+      "reason": "Stolen vehicle",
+      "added_at": "2026-08-31T00:00:00Z"
+    },
+    {
+      "_placeholder": true,
+      "plate_number": "REPLACE_WITH_REAL_DETECTED_PLATE_2",
+      "reason": "Suspected criminal activity",
+      "added_at": "2026-08-31T00:00:00Z"
+    },
+    {
+      "_placeholder": true,
+      "plate_number": "REPLACE_WITH_REAL_DETECTED_PLATE_3",
+      "reason": "Outstanding challan / warrant",
+      "added_at": "2026-08-31T00:00:00Z"
+    }
+  ]
+}

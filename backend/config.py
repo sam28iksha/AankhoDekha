@@ -1,0 +1,65 @@
+"""
+NAGARNETRA — Application Configuration
+Reads values from environment variables / .env file.
+"""
+from __future__ import annotations
+
+import os
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+    )
+
+    # ── Database ──────────────────────────────────────────────────
+    DB_MODE: str = "sqlite"  # "sqlite" | "postgres"
+    SQLITE_PATH: str = "./data/nagarnetra.db"
+    DATABASE_URL: str = ""  # only needed for postgres
+
+    POSTGRES_HOST: str = "localhost"
+    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = "nagarnetra"
+    POSTGRES_PASSWORD: str = "nagarnetra_pass"
+    POSTGRES_DB: str = "nagarnetra"
+
+    # ── ANPR Pipeline ─────────────────────────────────────────────
+    YOLO_WEIGHTS_PATH: str = "./models/best.pt"
+    FRAME_SAMPLE_RATE: int = 5
+    DETECTION_CONFIDENCE_THRESHOLD: float = 0.4
+    OCR_CONFIDENCE_THRESHOLD: float = 0.6
+
+    # ── Paths ──────────────────────────────────────────────────────
+    VIDEOS_DIR: str = "./data/sample_videos"
+    CAMERAS_JSON_PATH: str = "./data/cameras.json"
+    BLACKLIST_JSON_PATH: str = "./data/blacklist.json"
+    SNAPSHOTS_DIR: str = "./data/snapshots"
+
+    # ── API ────────────────────────────────────────────────────────
+    BACKEND_PORT: int = 8000
+    CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
+    LOG_LEVEL: str = "INFO"
+
+    def get_database_url(self) -> str:
+        """Return the correct async database URL based on DB_MODE."""
+        if self.DB_MODE == "postgres":
+            if self.DATABASE_URL:
+                return self.DATABASE_URL
+            return (
+                f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"@{self.POSTGRES_HOST}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+            )
+        # SQLite
+        db_path = Path(self.SQLITE_PATH)
+        db_path.parent.mkdir(parents=True, exist_ok=True)
+        return f"sqlite+aiosqlite:///{db_path.resolve()}"
+
+    def get_cors_origins(self) -> list[str]:
+        return [o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
+
+settings = Settings()
