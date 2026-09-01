@@ -58,7 +58,9 @@ python scripts/seed_demo.py
 Or inside Docker after Step 4:
 
 ```bash
-docker compose exec backend python /app/../scripts/seed_demo.py
+# PYTHONPATH=/app is already set in the backend service (docker-compose.yml)
+docker compose exec backend python /app/scripts/seed_demo.py
+
 ```
 
 ### 4. Start everything
@@ -96,8 +98,9 @@ curl -X POST http://localhost:8000/ingest/cam_02
 # Run from project root with backend environment active
 python scripts/ingest_videos.py
 
-# Or with Docker:
-docker compose exec backend python scripts/ingest_videos.py
+# Or with Docker (PYTHONPATH=/app pre-set in docker-compose.yml):
+docker compose exec backend python /app/scripts/ingest_videos.py
+
 ```
 
 **Option C — specific camera + debug options:**
@@ -166,7 +169,8 @@ Replace the placeholder entries with your real picks:
 ```bash
 python scripts/load_blacklist.py
 # or:
-docker compose exec backend python scripts/load_blacklist.py
+docker compose exec backend python /app/scripts/load_blacklist.py
+
 ```
 
 ### Step 5 — Re-run ingestion

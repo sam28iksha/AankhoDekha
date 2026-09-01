@@ -22,7 +22,12 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+# Path resolution — two-runtime design:
+#   Local: inserts NAGARNETRA/backend/ so backend modules resolve.
+#   Docker: PYTHONPATH=/app (docker-compose.yml) handles it; insert is a no-op.
+_backend_path = Path(__file__).parent.parent / "backend"
+if _backend_path.exists():
+    sys.path.insert(0, str(_backend_path))
 
 from db.init_db import init_db
 from db.base import AsyncSessionLocal

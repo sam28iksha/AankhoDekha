@@ -26,7 +26,15 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+# Path resolution — two-runtime design:
+#   Local (python scripts/seed_demo.py): inserts NAGARNETRA/backend/ so
+#     'from db.xxx import ...' resolves without installing the package.
+#   Docker (docker compose exec backend python /app/scripts/seed_demo.py):
+#     PYTHONPATH=/app is set in docker-compose.yml so /app/backend/ is never
+#     needed — this insert is a no-op (non-existent path is silently ignored).
+_backend_path = Path(__file__).parent.parent / "backend"
+if _backend_path.exists():
+    sys.path.insert(0, str(_backend_path))
 
 from db.init_db import init_db
 from db.base import AsyncSessionLocal
