@@ -4,10 +4,13 @@ Wraps Ultralytics YOLOv8 for plate bounding-box detection.
 
 Model resolution order:
   1. YOLO_WEIGHTS_PATH (custom/fine-tuned ANPR model)  <-- drop best.pt here
-  2. Ultralytics Hub: keremberke/license-plate-detection  (auto-download)
-  3. yolov8n.pt (generic COCO pretrained, fallback — plates detected as "car" etc.)
+  2. HuggingFace Hub: keremberke/license-plate-detection (auto-download, ~50 MB)
+  3. yolov8n.pt (generic COCO pretrained, last resort — lower accuracy)
 
 To use your own fine-tuned model, set YOLO_WEIGHTS_PATH in .env.
+
+Note: requires ultralytics>=8.3.0 for PyTorch 2.6 compatibility
+(torch.load weights_only=False is handled internally by ultralytics 8.3.0+).
 """
 from __future__ import annotations
 
@@ -53,13 +56,22 @@ class PlateDetector:
             logger.info(f"Loading custom ANPR weights: {weights_path}")
             model = YOLO(str(weights_path))
         else:
-            # Try to use a license-plate specific pretrained model from Ultralytics Hub
+            # Tier 2: download plate-specific model from HuggingFace Hub.
+            # keremberke/license-plate-detection is a YOLOv8m fine-tuned on
+            # ~25 k license plate images — meaningfully better than generic COCO.
+            # huggingface_hub is already a transitive dep of ultralytics.
             try:
+                from huggingface_hub import hf_hub_download
                 logger.info(
-                    "Custom weights not found. Trying Ultralytics Hub: "
-                    "keremberke/license-plate-detection (yolov8m-license-plate.pt)"
+                    "Custom weights not found. Downloading from HuggingFace Hub: "
+                    "keremberke/license-plate-detection / yolov8m-license-plate.pt"
                 )
-                model = YOLO("keremberke/license-plate-detection/yolov8m-license-plate.pt")
+                local_path = hf_hub_download(
+                    repo_id="keremberke/license-plate-detection",
+                    filename="yolov8m-license-plate.pt",
+                )
+                model = YOLO(local_path)
+                logger.info("HuggingFace Hub ANPR model loaded successfully.")
             except Exception as hub_err:
                 logger.warning(
                     f"Hub model unavailable ({hub_err}). "

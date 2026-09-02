@@ -9,7 +9,12 @@ asyncpg==0.29.0
 greenlet==3.0.3
 
 # ANPR / Vision
-ultralytics==8.2.28
+# Upgraded from 8.2.28 → 8.3.0: first release with native PyTorch 2.6
+# weights_only=False fix in torch_safe_load (no more UnpicklingError).
+ultralytics==8.3.0
+# huggingface_hub: explicit dep for tier-2 ANPR model download.
+# In ultralytics 8.2.x it was not guaranteed to be installed.
+huggingface_hub>=0.23.0
 paddleocr==2.7.3
 paddlepaddle==2.6.2
 opencv-python-headless==4.9.0.80
