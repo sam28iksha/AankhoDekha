@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { AlertTriangle, CheckCircle2, Filter, RefreshCw, Loader2, Bell } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Filter, RefreshCw, Bell } from 'lucide-react'
+import RadarLoader from '../components/RadarLoader'
 import { getAlerts, resolveAlert, type AlertEntry } from '../lib/api'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
 import { format, formatDistanceToNow } from 'date-fns'
@@ -83,7 +84,7 @@ export default function AlertsView() {
         style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)' }}
       >
         <div className="flex items-center gap-3 flex-1">
-          <Bell size={18} style={{ color: 'var(--accent-blue)' }} />
+          <Bell size={18} style={{ color: 'var(--accent-blue-light)' }} />
           <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Alerts Center</h1>
           {unresolvedCount > 0 && (
             <span
@@ -144,7 +145,7 @@ export default function AlertsView() {
       <div className="flex-1 overflow-y-auto p-6">
         {loading ? (
           <div className="flex items-center justify-center h-full gap-3" style={{ color: 'var(--text-muted)' }}>
-            <Loader2 size={20} className="animate-spin" />
+            <RadarLoader size={20} />
             <span>Loading alerts…</span>
           </div>
         ) : alerts.length === 0 ? (
@@ -156,7 +157,7 @@ export default function AlertsView() {
           <div className="glass-card overflow-hidden" id="alerts-table">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(15,23,42,0.6)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
                   {['#', 'Plate', 'Camera', 'Type', 'Time', 'Details', 'Status', 'Action'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
@@ -204,7 +205,7 @@ export default function AlertsView() {
                           className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
                         >
                           {resolving === alert.id
-                            ? <Loader2 size={11} className="animate-spin" />
+                            ? <RadarLoader size={11} />
                             : <CheckCircle2 size={11} />
                           }
                           Resolve

@@ -26,6 +26,13 @@ data/nagarnetra.db-wal
 
 # Snapshots
 data/snapshots/
+data/nagarnetra.db.bak-*
+
+# OCR Preview page — generated preview frames, regenerated on demand
+data/previews/
+
+# Ad-hoc test uploads (Blacklist page "Test Detection" tool)
+data/uploads/
 
 # Video files (large — don't commit)
 data/sample_videos/*.mp4
@@ -38,6 +45,7 @@ data/sample_videos/*.webm
 models/*.pt
 models/*.onnx
 !models/README.txt
+/*.pt
 
 # YOLO training runs
 runs/

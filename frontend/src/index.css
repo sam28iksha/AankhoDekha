@@ -6,23 +6,30 @@
 @import "leaflet/dist/leaflet.css";
 
 /* ── Base ──────────────────────────────────────────────────── */
+/* Dark "signal" palette — deep space-navy base, electric cyan as the primary
+   data/tech accent (common language for security & smart-city dashboards),
+   warm amber-orange for trajectory/highlights, a clean red for alerts.
+   A signature navy->cyan->amber gradient is used deliberately in a few
+   prominent spots (header accent bar, buttons, active nav, logo) rather
+   than everywhere, so it reads as a design signature, not noise. */
 :root {
-  --bg-primary: #0a0f1e;
-  --bg-secondary: #0f172a;
-  --bg-card: #1e293b;
-  --bg-card-hover: #253047;
-  --border: rgba(255, 255, 255, 0.08);
-  --text-primary: #f1f5f9;
-  --text-secondary: #94a3b8;
-  --text-muted: #64748b;
-  --accent-blue: #0d8fe8;
-  --accent-blue-light: #36a7f7;
-  --accent-orange: #f97316;
-  --accent-red: #ef4444;
+  --bg-primary: #0a0e17;
+  --bg-secondary: #0e1524;
+  --bg-card: #141c2e;
+  --bg-card-hover: #1b2740;
+  --border: rgba(80, 150, 190, 0.16);
+  --text-primary: #eef4f9;
+  --text-secondary: #8fa3bd;
+  --text-muted: #566d8a;
+  --accent-blue: #00b4d8;
+  --accent-blue-light: #48cae4;
+  --accent-orange: #ffaa4c;
+  --accent-red: #e63946;
   --accent-green: #22c55e;
-  --accent-amber: #f59e0b;
-  --glow-blue: rgba(13, 143, 232, 0.3);
-  --glow-red: rgba(239, 68, 68, 0.3);
+  --accent-amber: #fbbf24;
+  --glow-blue: rgba(0, 180, 216, 0.35);
+  --glow-red: rgba(230, 57, 70, 0.35);
+  --brand-gradient: linear-gradient(90deg, #0a0e17 0%, #023047 25%, #00b4d8 55%, #48cae4 75%, #ffaa4c 100%);
 }
 
 * {
@@ -39,6 +46,13 @@ html, body, #root {
 
 body {
   background-color: var(--bg-primary);
+  background-image:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(0, 180, 216, 0.12), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255, 170, 76, 0.07), transparent 55%),
+    radial-gradient(circle, rgba(80, 150, 190, 0.07) 1px, transparent 1px);
+  background-size: auto, auto, 28px 28px;
+  background-repeat: no-repeat, no-repeat, repeat;
+  background-attachment: fixed, fixed, fixed;
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -61,17 +75,34 @@ body {
   background: var(--accent-blue);
 }
 
+/* ── Gradient accent bar (signature touch — used under the top nav) ──── */
+.gradient-bar {
+  height: 3px;
+  width: 100%;
+  flex-shrink: 0;
+  background: var(--brand-gradient);
+  background-size: 200% 100%;
+  animation: gradientDrift 8s ease-in-out infinite;
+}
+
+@keyframes gradientDrift {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 0%; }
+}
+
 /* ── Glass card ─────────────────────────────────────────────── */
 .glass-card {
-  background: rgba(30, 41, 59, 0.7);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  position: relative;
+  background: rgba(20, 28, 46, 0.72);
+  backdrop-filter: blur(18px) saturate(1.15);
+  -webkit-backdrop-filter: blur(18px) saturate(1.15);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(80, 150, 190, 0.08), 0 8px 24px rgba(0, 0, 0, 0.28);
 }
 
 .glass-card-dark {
-  background: rgba(15, 23, 42, 0.85);
+  background: rgba(6, 9, 15, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
@@ -80,11 +111,11 @@ body {
 
 /* ── Glow effects ────────────────────────────────────────────── */
 .glow-blue {
-  box-shadow: 0 0 20px var(--glow-blue), 0 0 40px rgba(13, 143, 232, 0.1);
+  box-shadow: 0 0 20px var(--glow-blue), 0 0 40px rgba(0, 180, 216, 0.1);
 }
 
 .glow-red {
-  box-shadow: 0 0 20px var(--glow-red), 0 0 40px rgba(239, 68, 68, 0.1);
+  box-shadow: 0 0 20px var(--glow-red), 0 0 40px rgba(230, 57, 70, 0.1);
 }
 
 /* ── Alert badge pulse ─────────────────────────────────────── */
@@ -100,7 +131,7 @@ body {
 /* ── Plate badge ────────────────────────────────────────────── */
 .plate-badge {
   font-family: 'JetBrains Mono', monospace;
-  background: linear-gradient(135deg, #1a2340 0%, #0f172a 100%);
+  background: linear-gradient(135deg, #16233a 0%, #0a0e17 100%);
   border: 2px solid var(--accent-blue);
   border-radius: 6px;
   padding: 4px 12px;
@@ -109,13 +140,13 @@ body {
   font-size: 0.9rem;
   color: #ffffff;
   text-transform: uppercase;
-  box-shadow: 0 0 8px rgba(13, 143, 232, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 0 8px rgba(0, 180, 216, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .plate-badge.blacklisted {
   border-color: var(--accent-red);
   box-shadow: 0 0 12px var(--glow-red), inset 0 1px 0 rgba(255,255,255,0.05);
-  background: linear-gradient(135deg, #2d1010 0%, #1a0808 100%);
+  background: linear-gradient(135deg, #3a0f16 0%, #1a070a 100%);
 }
 
 /* ── Status indicators ──────────────────────────────────────── */
@@ -133,33 +164,45 @@ body {
 
 .status-dot.alert {
   background: var(--accent-red);
-  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
+  box-shadow: 0 0 6px rgba(230, 57, 70, 0.6);
   animation: alertPulse 1.5s ease-in-out infinite;
 }
 
 .status-dot.warning {
   background: var(--accent-amber);
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.6);
+  box-shadow: 0 0 6px rgba(251, 191, 36, 0.6);
 }
 
-/* ── Leaflet map dark theme ─────────────────────────────────── */
+/* ── Leaflet map, dark theme ─────────────────────────────────── */
 .leaflet-container {
-  background: #0a0f1e !important;
+  background: #0a0e17 !important;
   font-family: 'Inter', sans-serif;
 }
 
 .leaflet-tile-pane {
-  filter: brightness(0.6) contrast(1.1) saturate(0.8) hue-rotate(10deg);
+  /* Modest hue shift only — large rotations distort real map colors (parks,
+     water, highways) unpredictably. Cohesion with the cyan/amber palette
+     comes from the map-frame border and markers below instead. */
+  filter: brightness(0.58) contrast(1.15) saturate(0.9) hue-rotate(160deg);
+}
+
+/* ── Map frame (consistent border across Dashboard / Vehicle Search / Analytics) */
+.map-frame {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 rgba(80, 150, 190, 0.08), 0 0 0 1px rgba(0, 180, 216, 0.08);
 }
 
 .leaflet-control-attribution {
-  background: rgba(10, 15, 30, 0.8) !important;
-  color: rgba(148, 163, 184, 0.6) !important;
+  background: rgba(6, 9, 15, 0.8) !important;
+  color: rgba(143, 163, 189, 0.65) !important;
   font-size: 10px;
 }
 
 .leaflet-control-zoom a {
-  background: rgba(30, 41, 59, 0.9) !important;
+  background: rgba(20, 28, 46, 0.9) !important;
   color: var(--text-primary) !important;
   border-color: var(--border) !important;
 }
@@ -176,7 +219,7 @@ body {
   border-radius: 50%;
   background: var(--accent-blue);
   border: 2px solid white;
-  box-shadow: 0 0 10px rgba(13, 143, 232, 0.8), 0 0 20px rgba(13, 143, 232, 0.4);
+  box-shadow: 0 0 10px rgba(0, 180, 216, 0.8), 0 0 20px rgba(0, 180, 216, 0.4);
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -187,22 +230,107 @@ body {
 
 .camera-marker-dot.alert {
   background: var(--accent-red);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.9), 0 0 24px rgba(239, 68, 68, 0.5);
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.9), 0 0 24px rgba(230, 57, 70, 0.5);
   animation: alertPulse 1.5s ease-in-out infinite;
+}
+
+/* ── Trajectory highlight marker (pinpoints the exact sighted camera) ────── */
+.trajectory-highlight-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(250, 204, 21, 0.45);
+  animation: trajectoryPulse 1.8s ease-out infinite;
+}
+
+.trajectory-highlight-dot {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #facc15;
+  border: 2px solid #fff;
+  box-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
+}
+
+@keyframes trajectoryPulse {
+  0% { transform: scale(0.6); opacity: 0.9; }
+  70% { transform: scale(2.4); opacity: 0; }
+  100% { opacity: 0; }
+}
+
+/* ── Light basemap override (Analytics heatmap panel) ─────────────────────── */
+.map-light-theme .leaflet-tile-pane {
+  filter: none !important;
 }
 
 /* ── Trajectory line ────────────────────────────────────────── */
 .trajectory-path {
-  stroke: var(--accent-blue);
-  stroke-width: 3;
+  stroke: var(--accent-orange);
+  stroke-width: 4;
   stroke-dasharray: 8 4;
   stroke-linecap: round;
-  filter: drop-shadow(0 0 4px rgba(13, 143, 232, 0.6));
+  filter: drop-shadow(0 0 5px rgba(255, 170, 76, 0.7));
   animation: dashFlow 1.5s linear infinite;
 }
 
 @keyframes dashFlow {
   to { stroke-dashoffset: -12; }
+}
+
+/* ── Radar loader (branded loading indicator) ───────────────── */
+.radar-loader {
+  position: relative;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.radar-loader::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 180, 216, 0.18);
+}
+
+.radar-loader::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0%, transparent 70%, var(--accent-blue) 100%);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 2.5px), #000 calc(100% - 2.5px));
+  animation: radarSpin 0.9s linear infinite;
+  filter: drop-shadow(0 0 4px var(--glow-blue));
+}
+
+.radar-loader .radar-dot {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 22%;
+  height: 22%;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  box-shadow: 0 0 6px var(--glow-blue);
+  animation: alertPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes radarSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Page fade-in ──────────────────────────────────────────── */
+.page-fade-in {
+  animation: pageFadeIn 0.28s ease-out;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 /* ── Chart overrides ────────────────────────────────────────── */
@@ -217,38 +345,55 @@ body {
   color: var(--text-primary) !important;
 }
 
-/* ── Sidebar nav ────────────────────────────────────────────── */
+/* ── Top nav pills ─────────────────────────────────────────── */
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 8px;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 9px;
   color: var(--text-secondary);
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   text-decoration: none;
   border: 1px solid transparent;
+  white-space: nowrap;
 }
 
 .nav-item:hover {
-  background: rgba(13, 143, 232, 0.1);
+  background: rgba(0, 180, 216, 0.1);
   color: var(--accent-blue-light);
-  border-color: rgba(13, 143, 232, 0.2);
+  border-color: rgba(0, 180, 216, 0.25);
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(13, 143, 232, 0.2) 0%, rgba(1, 88, 160, 0.2) 100%);
+  background: linear-gradient(135deg, rgba(0, 180, 216, 0.24) 0%, rgba(255, 170, 76, 0.14) 100%);
   color: var(--accent-blue-light);
-  border-color: rgba(13, 143, 232, 0.4);
-  box-shadow: inset 0 0 12px rgba(13, 143, 232, 0.1);
+  border-color: rgba(0, 180, 216, 0.45);
+  box-shadow: inset 0 0 12px rgba(0, 180, 216, 0.12);
+}
+
+.nav-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--accent-red);
+  color: white;
+  font-size: 0.625rem;
+  font-weight: 700;
+  box-shadow: 0 0 8px var(--glow-red);
 }
 
 /* ── Stat card ──────────────────────────────────────────────── */
 .stat-card {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.8) 100%);
+  background: linear-gradient(135deg, rgba(20, 28, 46, 0.85) 0%, rgba(6, 9, 15, 0.85) 100%);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 20px;
@@ -256,14 +401,14 @@ body {
 }
 
 .stat-card:hover {
-  border-color: rgba(13, 143, 232, 0.3);
+  border-color: rgba(0, 180, 216, 0.3);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transform: translateY(-1px);
 }
 
 /* ── Input field ────────────────────────────────────────────── */
 .search-input {
-  background: rgba(15, 23, 42, 0.8);
+  background: rgba(6, 9, 15, 0.8);
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 10px 16px;
@@ -287,7 +432,7 @@ body {
 
 /* ── Button ─────────────────────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #0d8fe8 0%, #0158a0 100%);
+  background: linear-gradient(135deg, #00b4d8 0%, #023047 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -296,12 +441,12 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(13, 143, 232, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(13, 143, 232, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 180, 216, 0.4);
 }
 
 .btn-primary:active {
@@ -309,7 +454,7 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(30, 41, 59, 0.8);
+  background: rgba(20, 28, 46, 0.8);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -321,9 +466,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background: rgba(30, 41, 59, 1);
+  background: rgba(20, 28, 46, 1);
   color: var(--text-primary);
-  border-color: rgba(13, 143, 232, 0.3);
+  border-color: rgba(0, 180, 216, 0.3);
 }
 
 /* ── Alert row ──────────────────────────────────────────────── */
@@ -333,19 +478,19 @@ body {
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(239, 68, 68, 0.06);
-  border: 1px solid rgba(239, 68, 68, 0.2);
+  background: rgba(230, 57, 70, 0.06);
+  border: 1px solid rgba(230, 57, 70, 0.2);
   animation: fadeIn 0.3s ease-in-out;
   transition: all 0.2s ease;
 }
 
 .alert-row:hover {
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(230, 57, 70, 0.1);
 }
 
 .alert-row.resolved {
   opacity: 0.5;
-  background: rgba(30, 41, 59, 0.4);
+  background: rgba(20, 28, 46, 0.4);
   border-color: var(--border);
 }
 
@@ -353,7 +498,7 @@ body {
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(13, 143, 232, 0.2);
+  border: 2px solid rgba(0, 180, 216, 0.2);
   border-top-color: var(--accent-blue);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -374,8 +519,8 @@ body {
   font-weight: 500;
 }
 
-.tag-blue { background: rgba(13, 143, 232, 0.15); color: var(--accent-blue-light); border: 1px solid rgba(13, 143, 232, 0.3); }
-.tag-red { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+.tag-blue { background: rgba(0, 180, 216, 0.15); color: var(--accent-blue-light); border: 1px solid rgba(0, 180, 216, 0.3); }
+.tag-red { background: rgba(230, 57, 70, 0.15); color: #ff8a94; border: 1px solid rgba(230, 57, 70, 0.3); }
 .tag-green { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }
-.tag-amber { background: rgba(245, 158, 11, 0.15); color: #fcd34d; border: 1px solid rgba(245, 158, 11, 0.3); }
+.tag-amber { background: rgba(251, 191, 36, 0.15); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.3); }
 .tag-gray { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }

@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     DETECTION_CONFIDENCE_THRESHOLD: float = 0.4
     OCR_CONFIDENCE_THRESHOLD: float = 0.6
 
+    # ── Route Anomaly Detection ─────────────────────────────────────
+    # A plate seen at two cameras implying an average speed above this is
+    # physically implausible for one vehicle — flagged as a route anomaly
+    # (likely a cloned/duplicated plate rather than a real fast trip).
+    ANOMALY_SPEED_THRESHOLD_KMH: float = 120.0
+    ANOMALY_LOOKBACK_HOURS: int = 6
+
     # ── Paths ──────────────────────────────────────────────────────
     VIDEOS_DIR: str = "./data/sample_videos"
     CAMERAS_JSON_PATH: str = "./data/cameras.json"

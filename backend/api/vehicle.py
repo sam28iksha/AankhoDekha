@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.base import get_db
 from db.models import PlateEvent, Camera, Blacklist
+from utils.geo import haversine_km, bearing_deg, compass_label, duration_label
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/vehicle", tags=["vehicle"])
@@ -47,6 +48,7 @@ async def get_vehicle_history(
             "total_sightings": 0,
             "sightings": [],
             "trajectory": [],
+            "legs": [],
             "blacklisted": False,
         }
 
@@ -65,6 +67,29 @@ async def get_vehicle_history(
             "snapshot_path": event.frame_snapshot_path,
         })
         trajectory.append([cam.lat, cam.lng])
+
+    # Direction + timing between consecutive sightings ("legs" of the trip)
+    legs = []
+    for prev, curr in zip(sightings, sightings[1:]):
+        prev_ts = datetime.fromisoformat(prev["timestamp"])
+        curr_ts = datetime.fromisoformat(curr["timestamp"])
+        seconds = (curr_ts - prev_ts).total_seconds()
+        dist_km = haversine_km(prev["lat"], prev["lng"], curr["lat"], curr["lng"])
+        has_movement = dist_km >= 0.01  # same-camera re-sightings have no meaningful direction
+        deg = bearing_deg(prev["lat"], prev["lng"], curr["lat"], curr["lng"]) if has_movement else None
+        avg_speed_kmh = round(dist_km / (seconds / 3600), 1) if seconds > 0 and has_movement else None
+        legs.append({
+            "from_camera_id": prev["camera_id"],
+            "to_camera_id": curr["camera_id"],
+            "from_camera_name": prev["camera_name"],
+            "to_camera_name": curr["camera_name"],
+            "duration_seconds": round(seconds, 1),
+            "duration_label": duration_label(seconds),
+            "distance_km": round(dist_km, 2),
+            "avg_speed_kmh": avg_speed_kmh,
+            "bearing_deg": round(deg, 1) if deg is not None else None,
+            "direction": compass_label(deg) if deg is not None else None,
+        })
 
     # Blacklist check
     bl = await db.get(Blacklist, normalized)
@@ -85,6 +110,7 @@ async def get_vehicle_history(
         "cameras_visited": list({s["camera_id"] for s in sightings}),
         "sightings": sightings,
         "trajectory": trajectory,
+        "legs": legs,
     }
 
 

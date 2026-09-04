@@ -18,7 +18,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.base import get_db
 from db.models import PlateEvent, Camera, Alert
-from analytics.density import get_density
+from analytics.density import get_density, get_citywide_timeseries
 from analytics.od_matrix import get_od_matrix
 from analytics.congestion import get_congestion, get_speed_estimates
 
@@ -43,6 +43,49 @@ async def od_matrix_endpoint(
 ):
     """Origin-destination flow matrix between camera pairs."""
     return await get_od_matrix(db, hours=hours, min_trips=min_trips)
+
+
+@router.get("/timeseries")
+async def timeseries_endpoint(
+    hours: int = Query(24, ge=1, le=168),
+    db: AsyncSession = Depends(get_db),
+):
+    """City-wide hourly traffic volume — feeds the Analytics 'Traffic Flow Trend' chart."""
+    return await get_citywide_timeseries(db, hours=hours)
+
+
+@router.get("/overview")
+async def overview_endpoint(db: AsyncSession = Depends(get_db)):
+    """
+    Hero-card numbers for the Analytics page: busiest corridor, most congested
+    area, city-wide average speed, and count of active OD routes — computed
+    from the same queries the rest of the page already uses, in one round trip.
+    """
+    density = await get_density(db, hours=24)
+    congestion = await get_congestion(db)
+    speeds = await get_speed_estimates(db)
+    od = await get_od_matrix(db, hours=24)
+
+    busiest = density[0] if density else None
+    most_congested = congestion[0] if congestion and congestion[0]["congestion_score"] > 0 else None
+    avg_speed = round(sum(s["avg_speed_kmh"] for s in speeds) / len(speeds), 1) if speeds else None
+
+    return {
+        "busiest_camera": {
+            "camera_id": busiest["camera_id"],
+            "camera_name": busiest["camera_name"],
+            "event_count": busiest["event_count"],
+        } if busiest else None,
+        "most_congested": {
+            "camera_id": most_congested["camera_id"],
+            "camera_name": most_congested["camera_name"],
+            "road_segment": most_congested["road_segment"],
+            "status": most_congested["status"],
+            "congestion_score": most_congested["congestion_score"],
+        } if most_congested else None,
+        "citywide_avg_speed_kmh": avg_speed,
+        "active_routes": len(od["flows"]),
+    }
 
 
 @router.get("/congestion")

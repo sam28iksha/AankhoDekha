@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react'
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { getDensity, getODMatrix, getCongestion, getSpeedEstimates, getCameras } from '../lib/api'
-import type { DensityEntry, CongestionEntry, SpeedEstimate, ODMatrix } from '../lib/api'
-import { TrendingUp, TrendingDown, Minus, Gauge, ArrowRight } from 'lucide-react'
+import MapView from '../components/MapView'
+import StatCard from '../components/StatCard'
+import { getDensity, getODMatrix, getCongestion, getSpeedEstimates, getTimeseries, getAnalyticsOverview } from '../lib/api'
+import type { DensityEntry, CongestionEntry, SpeedEstimate, ODMatrix, TimeseriesPoint, AnalyticsOverview } from '../lib/api'
+import { ArrowRight, Signpost, AlertOctagon, Gauge as GaugeIcon, Route } from 'lucide-react'
+import { format } from 'date-fns'
 
 function StatusBadge({ status }: { status: string }) {
   const map: Record<string, string> = { normal: 'tag-green', moderate: 'tag-amber', heavy: 'tag-red' }
@@ -26,6 +29,8 @@ export default function Analytics() {
   const [congestion, setCongestion] = useState<CongestionEntry[]>([])
   const [speeds, setSpeeds] = useState<SpeedEstimate[]>([])
   const [odMatrix, setODMatrix] = useState<ODMatrix | null>(null)
+  const [timeseries, setTimeseries] = useState<TimeseriesPoint[]>([])
+  const [overview, setOverview] = useState<AnalyticsOverview | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,11 +39,15 @@ export default function Analytics() {
       getCongestion(),
       getSpeedEstimates(),
       getODMatrix(24),
-    ]).then(([d, c, s, od]) => {
+      getTimeseries(24),
+      getAnalyticsOverview(),
+    ]).then(([d, c, s, od, ts, ov]) => {
       setDensity(d)
       setCongestion(c)
       setSpeeds(s)
       setODMatrix(od)
+      setTimeseries(ts)
+      setOverview(ov)
     }).catch(console.error).finally(() => setLoading(false))
   }, [])
 
@@ -48,6 +57,7 @@ export default function Analytics() {
 
   const topFlows = odMatrix?.flows.slice(0, 10) ?? []
   const topSpeeds = speeds.slice(0, 8)
+  const trendData = timeseries.map(t => ({ ...t, label: format(new Date(t.hour), 'HH:mm') }))
 
   return (
     <div className="h-full overflow-y-auto p-6" style={{ background: 'var(--bg-primary)' }}>
@@ -56,6 +66,88 @@ export default function Analytics() {
         <div>
           <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Traffic Analytics</h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>City-wide patterns · Last 24 hours</p>
+        </div>
+
+        {/* ── Hero stat cards ───────────────────────────────── */}
+        <div className="grid grid-cols-4 gap-4" id="analytics-overview">
+          <StatCard
+            id="stat-busiest"
+            label="Busiest Corridor"
+            value={loading ? '…' : (overview?.busiest_camera?.camera_name ?? '—')}
+            sublabel={overview?.busiest_camera ? `${overview.busiest_camera.event_count} events (24h)` : undefined}
+            icon={Signpost}
+            color="var(--accent-blue-light)"
+          />
+          <StatCard
+            id="stat-congested"
+            label="Most Congested Area"
+            value={loading ? '…' : (overview?.most_congested?.camera_name ?? 'None')}
+            sublabel={overview?.most_congested ? `${overview.most_congested.road_segment || ''} · ${overview.most_congested.status.toUpperCase()}` : 'All clear'}
+            icon={AlertOctagon}
+            color="var(--accent-red)"
+          />
+          <StatCard
+            id="stat-avg-speed"
+            label="Avg City Speed"
+            value={loading ? '…' : (overview?.citywide_avg_speed_kmh != null ? `${overview.citywide_avg_speed_kmh} km/h` : '—')}
+            icon={GaugeIcon}
+            color="var(--accent-green)"
+          />
+          <StatCard
+            id="stat-routes"
+            label="Active Routes Tracked"
+            value={loading ? '…' : (overview?.active_routes ?? 0)}
+            icon={Route}
+            color="var(--accent-amber)"
+          />
+        </div>
+
+        {/* ── GIS congestion map ─────────────────────────────── */}
+        <div className="glass-card p-5" id="analytics-map" style={{ height: 380 }}>
+          <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+            🗺️ City Traffic Heatmap & Congestion Overlay
+          </h2>
+          <div className="map-frame" style={{ height: 'calc(100% - 32px)' }}>
+            <MapView
+              congestion={congestion}
+              lightBasemap
+              heatmapOptions={{
+                radius: 55,
+                blur: 40,
+                max: 0.8,
+                gradient: {
+                  0.2: '#22c55e',
+                  0.4: '#eab308',
+                  0.6: '#f97316',
+                  0.8: '#ef4444',
+                  1.0: '#b91c1c',
+                },
+              }}
+            />
+          </div>
+        </div>
+
+        {/* ── Traffic flow trend ─────────────────────────────── */}
+        <div className="glass-card p-5" id="trend-chart">
+          <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            📈 Traffic Flow Trend (Last 24h)
+          </h2>
+          {trendData.length === 0 && !loading ? (
+            <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>No data yet — run ingestion first.</div>
+          ) : (
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={trendData} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+                <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
+                <Tooltip
+                  contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }}
+                  labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
+                />
+                <Line type="monotone" dataKey="count" stroke="#22c55e" strokeWidth={2} dot={false} name="Events" />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         {/* ── Density bar chart ─────────────────────────────── */}
@@ -82,7 +174,7 @@ export default function Analytics() {
                   labelStyle={{ color: 'var(--text-primary)', fontWeight: 600 }}
                   itemStyle={{ color: 'var(--accent-blue-light)' }}
                 />
-                <Bar dataKey="event_count" fill="#0d8fe8" radius={[4, 4, 0, 0]} name="Events" />
+                <Bar dataKey="event_count" fill="#5b7fb5" radius={[4, 4, 0, 0]} name="Events" />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -101,7 +193,7 @@ export default function Analytics() {
             ) : (
               <div className="flex flex-col gap-2">
                 {topFlows.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 rounded" style={{ background: 'rgba(30,41,59,0.5)' }}>
+                  <div key={i} className="flex items-center gap-3 p-2 rounded" style={{ background: 'rgba(20,28,46,0.55)' }}>
                     <span className="text-xs w-4 text-center font-bold" style={{ color: 'var(--text-muted)' }}>{i + 1}</span>
                     <div className="flex-1 min-w-0 flex items-center gap-2 text-xs">
                       <span className="truncate" style={{ color: 'var(--text-secondary)' }}>{cameraNames[f.origin] || f.origin}</span>

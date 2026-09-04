@@ -50,6 +50,7 @@ from db.models import Camera, PlateEvent, Blacklist, Alert
 from anpr.frame_source import VideoFileSource
 from anpr.pipeline import ANPRPipeline
 from api.alert_manager import alert_manager
+from api.anomaly import check_speed_anomaly
 
 logging.basicConfig(
     level=logging.INFO,
@@ -124,11 +125,33 @@ async def ingest_camera(
                     details=f"Blacklisted plate detected at {camera_meta['name']}. Reason: {bl_entry.reason}",
                 )
                 db.add(alert)
+                await db.flush()
                 alerts_fired += 1
+
+                await alert_manager.broadcast_alert(
+                    alert_id=alert.id,
+                    plate_number=plate_event.plate_number,
+                    camera_id=plate_event.camera_id,
+                    camera_name=camera_meta["name"],
+                    alert_type="blacklist_hit",
+                    timestamp=plate_event.timestamp,
+                    details=f"Blacklisted plate detected at {camera_meta['name']}. Reason: {bl_entry.reason}",
+                )
                 logger.warning(
                     f"🚨 BLACKLIST HIT: {plate_event.plate_number} "
                     f"at {camera_meta['name']} ({plate_event.timestamp.strftime('%H:%M:%S')})"
                 )
+
+            # Route anomaly check (implausible transit speed from prior sighting)
+            await check_speed_anomaly(
+                db,
+                plate_number=plate_event.plate_number,
+                camera_id=plate_event.camera_id,
+                camera_name=camera_meta["name"],
+                camera_lat=camera_meta["lat"],
+                camera_lng=camera_meta["lng"],
+                timestamp=plate_event.timestamp,
+            )
 
             await db.commit()
             events_written += 1

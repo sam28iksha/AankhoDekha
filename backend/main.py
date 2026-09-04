@@ -4,9 +4,15 @@ Team: The Underthinker | Smart India Hackathon 2026
 """
 from __future__ import annotations
 
+import faulthandler
 import logging
 import sys
 from contextlib import asynccontextmanager
+
+# Enable faulthandler FIRST — prints a native C-level stack trace to stderr
+# on SIGSEGV/SIGBUS/SIGABRT so we can see where a segfault actually happens
+# instead of just getting 'exited with code 139'.
+faulthandler.enable(file=sys.stderr, all_threads=True)
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -69,16 +75,25 @@ snapshots_dir = Path(settings.SNAPSHOTS_DIR)
 snapshots_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/snapshots", StaticFiles(directory=str(snapshots_dir)), name="snapshots")
 
+# Mount detection-preview frame sequences (annotated JPEGs + manifest.json)
+previews_dir = snapshots_dir.parent / "previews"
+previews_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/previews", StaticFiles(directory=str(previews_dir)), name="previews")
+
 # Import and register routers
 from api.ingest import router as ingest_router
 from api.vehicle import router as vehicle_router
 from api.analytics import router as analytics_router
 from api.alerts import router as alerts_router
+from api.blacklist import router as blacklist_router
+from api.preview import router as preview_router
 
 app.include_router(ingest_router)
 app.include_router(vehicle_router)
 app.include_router(analytics_router)
 app.include_router(alerts_router)
+app.include_router(blacklist_router)
+app.include_router(preview_router)
 
 
 @app.get("/health")

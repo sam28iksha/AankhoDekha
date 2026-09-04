@@ -1,28 +1,13 @@
 import { useEffect, useState, useCallback } from 'react'
 import { AlertTriangle, Car, Activity, Zap, RefreshCw } from 'lucide-react'
 import MapView from '../components/MapView'
+import StatCard from '../components/StatCard'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
 import {
   getSummary, getDensity, getAlerts,
   type Summary, type DensityEntry, type AlertEntry
 } from '../lib/api'
 import { formatDistanceToNow } from 'date-fns'
-
-function StatCard({ label, value, icon: Icon, color, id }: {
-  label: string; value: string | number; icon: any; color: string; id: string
-}) {
-  return (
-    <div className="stat-card" id={id}>
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-medium uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>{label}</span>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}20`, border: `1px solid ${color}30` }}>
-          <Icon size={14} color={color} />
-        </div>
-      </div>
-      <div className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>{value}</div>
-    </div>
-  )
-}
 
 function LiveAlertItem({ alert }: { alert: WSMessage }) {
   return (
@@ -119,7 +104,7 @@ export default function Dashboard() {
             label="Vehicles Today"
             value={loading ? '…' : (summary?.vehicles_seen_today ?? 0).toLocaleString()}
             icon={Car}
-            color="var(--accent-blue)"
+            color="var(--accent-blue-light)"
           />
           <StatCard
             id="stat-active-alerts"
@@ -195,7 +180,7 @@ export default function Dashboard() {
                       width: `${Math.max(20, (d.event_count / Math.max(...density.map(x => x.event_count), 1)) * 60)}px`,
                       height: '4px',
                       borderRadius: '2px',
-                      background: d.event_count > 100 ? 'var(--accent-red)' : d.event_count > 50 ? 'var(--accent-amber)' : 'var(--accent-blue)',
+                      background: d.event_count > 100 ? 'var(--accent-red)' : d.event_count > 50 ? 'var(--accent-amber)' : 'var(--accent-blue-light)',
                     }}
                   />
                   <span className="font-mono" style={{ color: 'var(--text-muted)' }}>{d.event_count}</span>

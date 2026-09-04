@@ -1,55 +1,64 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { useState, useCallback } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { useState, useCallback, useEffect } from 'react'
 import {
-  Map, Search, BarChart3, Bell, AlertTriangle, Eye,
-  Wifi, WifiOff, Menu, X
+  Map, Search, BarChart3, Bell, Eye, Ban, ScanLine,
+  Wifi, WifiOff,
 } from 'lucide-react'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
+import Toast from './Toast'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Live Map', icon: Map, id: 'nav-dashboard' },
   { to: '/vehicle', label: 'Vehicle Search', icon: Search, id: 'nav-vehicle' },
   { to: '/analytics', label: 'Analytics', icon: BarChart3, id: 'nav-analytics' },
   { to: '/alerts', label: 'Alerts', icon: Bell, id: 'nav-alerts' },
+  { to: '/blacklist', label: 'Blacklist', icon: Ban, id: 'nav-blacklist' },
+  { to: '/ocr-preview', label: 'OCR Preview', icon: ScanLine, id: 'nav-ocr-preview' },
 ]
 
 export default function Layout() {
-  const [liveAlerts, setLiveAlerts] = useState<WSMessage[]>([])
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [unseenAlerts, setUnseenAlerts] = useState(0)
+  const location = useLocation()
 
   const handleWSMessage = useCallback((msg: WSMessage) => {
     if (msg.type === 'alert') {
-      setLiveAlerts(prev => [msg, ...prev].slice(0, 5))
+      setUnseenAlerts(n => n + 1)
     }
   }, [])
 
   const { connected } = useAlertWebSocket(handleWSMessage)
 
+  useEffect(() => {
+    if (location.pathname === '/alerts') setUnseenAlerts(0)
+  }, [location.pathname])
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-      {/* ── Sidebar ──────────────────────────────────────────── */}
-      <aside
-        className={`flex flex-col transition-all duration-300 ${sidebarOpen ? 'w-64' : 'w-0 overflow-hidden'}`}
-        style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border)', flexShrink: 0 }}
+    <div className="flex h-screen w-screen flex-col overflow-hidden">
+      {/* ── Top nav bar ──────────────────────────────────────── */}
+      <header
+        className="flex items-center gap-4 px-4 flex-shrink-0"
+        style={{ background: 'var(--bg-secondary)', height: '56px' }}
       >
         {/* Logo */}
-        <div className="p-5 flex items-center gap-3" style={{ borderBottom: '1px solid var(--border)' }}>
+        <div className="flex items-center gap-2.5 flex-shrink-0">
           <div
-            className="w-9 h-9 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #0d8fe8, #0158a0)', boxShadow: '0 0 12px rgba(13,143,232,0.4)' }}
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #023047 0%, #00b4d8 55%, #ffaa4c 100%)', boxShadow: '0 0 14px rgba(0,180,216,0.45)' }}
           >
-            <Eye size={18} color="white" />
+            <Eye size={16} color="white" />
           </div>
-          <div>
-            <div className="font-bold text-sm leading-tight" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
+          <div className="hidden sm:block leading-tight">
+            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
               NAGARNETRA
             </div>
-            <div className="text-xs" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
+            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
           </div>
         </div>
 
-        {/* Nav */}
-        <nav className="flex-1 p-3 flex flex-col gap-1 overflow-y-auto">
+        <div style={{ width: 1, height: 28, background: 'var(--border)' }} />
+
+        {/* Nav pills */}
+        <nav className="flex items-center gap-1 flex-1 overflow-x-auto">
           {NAV_ITEMS.map(({ to, label, icon: Icon, id }) => (
             <NavLink
               key={to}
@@ -57,76 +66,39 @@ export default function Layout() {
               id={id}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={16} />
+              <Icon size={15} />
               <span>{label}</span>
+              {to === '/alerts' && unseenAlerts > 0 && (
+                <span className="nav-badge">{unseenAlerts > 99 ? '99+' : unseenAlerts}</span>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        {/* Live alert mini-feed */}
-        {liveAlerts.length > 0 && (
-          <div className="p-3" style={{ borderTop: '1px solid var(--border)' }}>
-            <div className="text-xs font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--accent-red)' }}>
-              <AlertTriangle size={12} />
-              LIVE ALERTS
-            </div>
-            <div className="flex flex-col gap-1 max-h-36 overflow-y-auto">
-              {liveAlerts.map((a, i) => (
-                <div key={i} className="text-xs p-2 rounded" style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)' }}>
-                  <span className="font-mono font-bold" style={{ color: 'var(--accent-red)' }}>{a.plate_number}</span>
-                  <div style={{ color: 'var(--text-muted)' }}>{a.camera_name}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* WS status + team */}
-        <div className="p-4" style={{ borderTop: '1px solid var(--border)' }}>
-          <div className="flex items-center gap-2 mb-2">
-            {connected ? (
-              <><span className="status-dot online" /><span className="text-xs" style={{ color: 'var(--accent-green)' }}>Live Feed Connected</span></>
-            ) : (
-              <><span className="status-dot" style={{ background: 'var(--accent-amber)' }} /><span className="text-xs" style={{ color: 'var(--accent-amber)' }}>Reconnecting…</span></>
-            )}
-          </div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Team: The Underthinker</div>
-          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>SIH 2026</div>
-        </div>
-      </aside>
-
-      {/* ── Main ─────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Top bar */}
-        <header
-          className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
-          style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border)', height: '52px' }}
-        >
-          <button
-            id="toggle-sidebar"
-            onClick={() => setSidebarOpen(s => !s)}
-            className="p-1.5 rounded hover:bg-white/5 transition-colors"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
-          </button>
-          <div className="flex-1" />
+        {/* WS status + team credit */}
+        <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             {connected
-              ? <Wifi size={14} style={{ color: 'var(--accent-green)' }} />
-              : <WifiOff size={14} style={{ color: 'var(--accent-amber)' }} />
+              ? <><Wifi size={14} style={{ color: 'var(--accent-green)' }} /><span className="text-xs hidden md:inline" style={{ color: 'var(--accent-green)' }}>Live</span></>
+              : <><WifiOff size={14} style={{ color: 'var(--accent-amber)' }} /><span className="text-xs hidden md:inline" style={{ color: 'var(--accent-amber)' }}>Reconnecting…</span></>
             }
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {connected ? 'WebSocket active' : 'Connecting…'}
-            </span>
           </div>
-        </header>
+          <div className="hidden lg:block text-right leading-tight">
+            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Team: The Underthinker</div>
+            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>SIH 2026</div>
+          </div>
+        </div>
+      </header>
 
-        {/* Page content */}
-        <main className="flex-1 overflow-hidden">
-          <Outlet />
-        </main>
-      </div>
+      {/* Signature gradient accent — navy -> cyan -> amber, drifts slowly */}
+      <div className="gradient-bar" />
+
+      {/* ── Page content ─────────────────────────────────────── */}
+      <main className="flex-1 overflow-hidden page-fade-in" key={location.pathname}>
+        <Outlet />
+      </main>
+
+      <Toast />
     </div>
   )
 }

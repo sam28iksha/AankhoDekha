@@ -1,14 +1,39 @@
 import { useState, useCallback } from 'react'
-import { Search, AlertTriangle, Clock, Camera, ChevronRight, Loader2 } from 'lucide-react'
+import { Search, AlertTriangle, Clock, Navigation, Gauge } from 'lucide-react'
 import MapView from '../components/MapView'
-import { getVehicleHistory, type VehicleHistory, type PlateEvent } from '../lib/api'
+import RadarLoader from '../components/RadarLoader'
+import { getVehicleHistory, type VehicleHistory, type PlateEvent, type TrajectoryLeg } from '../lib/api'
 import { formatDistanceToNow, format } from 'date-fns'
+
+function LegConnector({ leg }: { leg: TrajectoryLeg }) {
+  return (
+    <div className="flex items-center gap-3 pl-3.5 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+      <div style={{ width: 2, alignSelf: 'stretch', background: 'var(--border)' }} />
+      {leg.direction && (
+        <>
+          <Navigation
+            size={13}
+            style={{ color: 'var(--accent-blue-light)', transform: `rotate(${leg.bearing_deg}deg)`, flexShrink: 0 }}
+          />
+          <span className="font-semibold" style={{ color: 'var(--accent-blue-light)' }}>{leg.direction}</span>
+          <span>·</span>
+        </>
+      )}
+      <span>{leg.distance_km} km in {leg.duration_label}</span>
+      {leg.avg_speed_kmh != null && (
+        <span className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
+          <Gauge size={11} /> {leg.avg_speed_kmh} km/h
+        </span>
+      )}
+    </div>
+  )
+}
 
 function SightingRow({ event, index }: { event: PlateEvent; index: number }) {
   return (
     <div
       className="flex items-start gap-3 p-3 rounded-lg transition-colors hover:bg-white/5"
-      style={{ border: '1px solid var(--border)', background: 'rgba(30,41,59,0.4)' }}
+      style={{ border: '1px solid var(--border)', background: 'rgba(20,28,46,0.5)' }}
     >
       {/* Timeline connector */}
       <div className="flex flex-col items-center flex-shrink-0">
@@ -38,7 +63,6 @@ function SightingRow({ event, index }: { event: PlateEvent; index: number }) {
           </span>
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <span>Confidence: <span style={{ color: 'var(--accent-green)' }}>{(event.confidence * 100).toFixed(1)}%</span></span>
           <span>📍 {event.lat.toFixed(4)}, {event.lng.toFixed(4)}</span>
         </div>
       </div>
@@ -104,7 +128,7 @@ export default function VehicleSearch() {
               onClick={search}
               disabled={loading}
             >
-              {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+              {loading ? <RadarLoader size={14} /> : <Search size={14} />}
               Search
             </button>
           </div>
@@ -112,7 +136,7 @@ export default function VehicleSearch() {
 
         {/* Error */}
         {error && (
-          <div className="mx-4 mt-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#fca5a5' }}>
+          <div className="mx-4 mt-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: '#ff8a94' }}>
             {error}
           </div>
         )}
@@ -133,7 +157,7 @@ export default function VehicleSearch() {
             </div>
 
             {history.blacklisted && history.blacklist_info && (
-              <div className="p-2 rounded text-xs mb-3" style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#fca5a5' }}>
+              <div className="p-2 rounded text-xs mb-3" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.2)', color: '#ff8a94' }}>
                 ⚠ Reason: {history.blacklist_info.reason}
               </div>
             )}
@@ -164,7 +188,7 @@ export default function VehicleSearch() {
                   value={scrubberIndex}
                   onChange={e => setScrubberIndex(Number(e.target.value))}
                   className="w-full"
-                  style={{ accentColor: 'var(--accent-blue)' }}
+                  style={{ accentColor: 'var(--accent-blue-light)' }}
                 />
                 {currentSighting && (
                   <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
@@ -186,7 +210,10 @@ export default function VehicleSearch() {
             </div>
           )}
           {history?.sightings.map((event, i) => (
-            <SightingRow key={event.event_id} event={event} index={i} />
+            <div key={event.event_id}>
+              <SightingRow event={event} index={i} />
+              {history.legs[i] && <LegConnector leg={history.legs[i]} />}
+            </div>
           ))}
           {history && history.total_sightings === 0 && (
             <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
@@ -197,11 +224,14 @@ export default function VehicleSearch() {
       </div>
 
       {/* ── Map (trajectory) ───────────────────────────────────── */}
-      <div className="flex-1">
-        <MapView
-          trajectory={trajectorySlice.length >= 2 ? trajectorySlice : history?.trajectory}
-          trajectoryLabel={history?.plate_number}
-        />
+      <div className="flex-1 p-3">
+        <div className="map-frame h-full">
+          <MapView
+            trajectory={trajectorySlice.length >= 2 ? trajectorySlice : history?.trajectory}
+            trajectoryLabel={history?.plate_number}
+            legs={trajectorySlice.length >= 2 ? history?.legs.slice(0, trajectorySlice.length - 1) : history?.legs}
+          />
+        </div>
       </div>
     </div>
   )

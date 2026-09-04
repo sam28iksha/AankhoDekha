@@ -82,5 +82,26 @@
     "lat": 28.5677,
     "lng": 77.2433,
     "road_segment": "Ring Road-South East"
+  },
+  {
+    "camera_id": "cam_13",
+    "name": "Vasant Vihar",
+    "lat": 28.5679,
+    "lng": 77.1587,
+    "road_segment": "Nelson Mandela Marg"
+  },
+  {
+    "camera_id": "cam_14",
+    "name": "Mayur Vihar",
+    "lat": 28.6096,
+    "lng": 77.2953,
+    "road_segment": "NH-24 Link Road"
+  },
+  {
+    "camera_id": "cam_15",
+    "name": "Saket",
+    "lat": 28.5245,
+    "lng": 77.2066,
+    "road_segment": "MB Road Corridor"
   }
 ]

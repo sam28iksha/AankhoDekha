@@ -52,6 +52,29 @@ async def get_density(
     ]
 
 
+async def get_citywide_timeseries(
+    db: AsyncSession,
+    hours: int = 24,
+) -> List[Dict[str, Any]]:
+    """
+    Return city-wide hourly event counts across all cameras — backs the
+    Analytics page's "Traffic Flow Trend" chart.
+    """
+    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+
+    result = await db.execute(
+        select(
+            func.strftime("%Y-%m-%dT%H:00:00", PlateEvent.timestamp).label("hour"),
+            func.count(PlateEvent.id).label("count"),
+        )
+        .where(PlateEvent.timestamp >= since)
+        .group_by(text("hour"))
+        .order_by(text("hour"))
+    )
+    rows = result.fetchall()
+    return [{"hour": row.hour, "count": row.count} for row in rows]
+
+
 async def get_density_timeseries(
     db: AsyncSession,
     camera_id: str,

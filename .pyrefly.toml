@@ -1,0 +1,19 @@
+# .pyrefly.toml
+# NAGARNETRA backend — Docker-only Python environment config
+#
+# All dependencies (torch, ultralytics, numpy, fastapi, sqlalchemy,
+# paddleocr, huggingface_hub, etc.) are installed inside the Docker
+# container (python:3.11-slim via backend/requirements.txt).
+# They are NOT installed on the host machine, so Pyrefly will
+# report missing-import errors for every third-party package when
+# checking against the host Python 3.14 interpreter.
+#
+# This config suppresses those false positives so the IDE stays
+# clean during development. The actual runtime environment is Docker.
+[pyrefly]
+# Ignore missing third-party imports — packages live in Docker, not on host.
+# See: https://pyrefly.org/en/docs/configuration/
+ignore_missing_imports = true
+
+# Use Python 3.11 semantics to match the container's runtime version.
+python_version = "3.11"
