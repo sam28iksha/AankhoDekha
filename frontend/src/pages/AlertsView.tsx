@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react'
-import { AlertTriangle, CheckCircle2, Filter, RefreshCw, Bell } from 'lucide-react'
+import { useSearchParams } from 'react-router-dom'
+import { AlertTriangle, CheckCircle2, Filter, RefreshCw, Bell, X } from 'lucide-react'
 import RadarLoader from '../components/RadarLoader'
 import { getAlerts, resolveAlert, type AlertEntry } from '../lib/api'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
@@ -11,7 +12,16 @@ function AlertTypeBadge({ type }: { type: string }) {
     : <span className="tag tag-amber">⚠ Anomaly</span>
 }
 
+function SourceBadge({ source }: { source: string }) {
+  return source === 'simulated'
+    ? <span className="tag" style={{ background: 'rgba(148,163,184,0.15)', color: '#94a3b8' }}>🎬 Simulated</span>
+    : <span className="tag tag-green">🎥 Live Detection</span>
+}
+
 export default function AlertsView() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const plateFilter = searchParams.get('plate')
+
   const [alerts, setAlerts] = useState<AlertEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [resolving, setResolving] = useState<number | null>(null)
@@ -26,6 +36,7 @@ export default function AlertsView() {
       if (filterType !== 'all') params.alert_type = filterType
       if (filterResolved === 'unresolved') params.resolved = false
       if (filterResolved === 'resolved') params.resolved = true
+      if (plateFilter) params.plate_number = plateFilter
       const data = await getAlerts(params)
       setAlerts(data)
     } catch (err) {
@@ -33,7 +44,7 @@ export default function AlertsView() {
     } finally {
       setLoading(false)
     }
-  }, [filterType, filterResolved])
+  }, [filterType, filterResolved, plateFilter])
 
   useEffect(() => { fetchAlerts() }, [fetchAlerts])
 
@@ -52,6 +63,7 @@ export default function AlertsView() {
         alert_type: (msg.alert_type as any) || 'blacklist_hit',
         resolved: false,
         details: msg.details,
+        source: (msg.source as any) || 'detection',
       }
       setAlerts(prev => [newAlert, ...prev])
     }
@@ -96,6 +108,12 @@ export default function AlertsView() {
           )}
           {liveCount > 0 && (
             <span className="tag tag-blue">{liveCount} live today</span>
+          )}
+          {plateFilter && (
+            <span className="tag tag-blue flex items-center gap-1">
+              Plate: {plateFilter}
+              <X size={11} className="cursor-pointer" onClick={() => setSearchParams({})} />
+            </span>
           )}
         </div>
 
@@ -158,7 +176,7 @@ export default function AlertsView() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
-                  {['#', 'Plate', 'Camera', 'Type', 'Time', 'Details', 'Status', 'Action'].map(h => (
+                  {['#', 'Plate', 'Camera', 'Type', 'Source', 'Time', 'Details', 'Status', 'Action'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
@@ -181,6 +199,7 @@ export default function AlertsView() {
                     </td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{alert.camera_name}</td>
                     <td className="px-4 py-3"><AlertTypeBadge type={alert.alert_type} /></td>
+                    <td className="px-4 py-3"><SourceBadge source={alert.source} /></td>
                     <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
                       <div>{format(new Date(alert.timestamp), 'dd MMM HH:mm:ss')}</div>
                       <div style={{ color: 'var(--text-muted)' }}>

@@ -81,6 +81,7 @@ async def _write_event_and_maybe_alert(
             alert_type="blacklist_hit",
             resolved=False,
             details=f"Blacklisted: {bl_entry.reason}",
+            source="detection",
         )
         db.add(alert)
         await db.flush()
@@ -93,6 +94,7 @@ async def _write_event_and_maybe_alert(
             alert_type="blacklist_hit",
             timestamp=plate_event.timestamp,
             details=f"Blacklisted plate detected at {cam.name}. Reason: {bl_entry.reason}",
+            source="detection",
         )
         logger.warning(f"🚨 BLACKLIST HIT: {plate_event.plate_number} at {cam.name}")
 

@@ -9,6 +9,7 @@ export interface WSMessage {
   camera_id?: string
   camera_name?: string
   alert_type?: string
+  source?: string
   timestamp?: string
   details?: string
   message?: string

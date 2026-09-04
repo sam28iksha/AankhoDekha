@@ -11,9 +11,12 @@
 # This config suppresses those false positives so the IDE stays
 # clean during development. The actual runtime environment is Docker.
 [pyrefly]
-# Ignore missing third-party imports — packages live in Docker, not on host.
-# See: https://pyrefly.org/en/docs/configuration/
-ignore_missing_imports = true
+# Ignore missing third-party AND local-package imports — everything lives in
+# Docker, not on host. Correct syntax per https://pyrefly.org/en/docs/configuration/
+# is a hyphenated key taking a list of glob patterns — NOT the underscored
+# boolean this used to be set to, which pyrefly silently ignored as an
+# unrecognized key (that's why these warnings never actually went away).
+ignore-missing-imports = ["*"]
 
 # Use Python 3.11 semantics to match the container's runtime version.
-python_version = "3.11"
+python-version = "3.11"

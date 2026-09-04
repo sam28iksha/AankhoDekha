@@ -87,6 +87,7 @@ from api.analytics import router as analytics_router
 from api.alerts import router as alerts_router
 from api.blacklist import router as blacklist_router
 from api.preview import router as preview_router
+from api.routing import router as routing_router
 
 app.include_router(ingest_router)
 app.include_router(vehicle_router)
@@ -94,6 +95,7 @@ app.include_router(analytics_router)
 app.include_router(alerts_router)
 app.include_router(blacklist_router)
 app.include_router(preview_router)
+app.include_router(routing_router)
 
 
 @app.get("/health")

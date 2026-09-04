@@ -62,3 +62,6 @@ class Alert(Base):
     alert_type = Column(String(50), nullable=False)  # "blacklist_hit" | "anomaly"
     resolved = Column(Boolean, nullable=False, default=False)
     details = Column(Text, nullable=True)
+    # "detection" — a real plate match/anomaly found during actual ingestion.
+    # "simulated" — fired on demand via POST /alerts/simulate for demo purposes.
+    source = Column(String(20), nullable=False, default="detection")

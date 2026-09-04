@@ -42,14 +42,33 @@ async def get_vehicle_history(
     )
     rows = result.fetchall()
 
+    # A plate can be blacklisted pre-emptively before ever being sighted, so
+    # this check always runs — even with zero rows — and the response below
+    # always carries the full shape (cameras_visited, blacklist_info, etc.)
+    # regardless of whether there are any sightings. A previous version
+    # short-circuited here with a partial object when rows was empty, which
+    # omitted "cameras_visited" entirely and crashed the frontend (reading
+    # .length on undefined) for any blacklisted-but-unsighted plate.
+    bl = await db.get(Blacklist, normalized)
+    blacklist_info = None
+    if bl:
+        blacklist_info = {
+            "reason": bl.reason,
+            "added_at": bl.added_at.isoformat(),
+        }
+
     if not rows:
         return {
             "plate_number": normalized,
             "total_sightings": 0,
+            "blacklisted": bl is not None,
+            "blacklist_info": blacklist_info,
+            "first_seen": None,
+            "last_seen": None,
+            "cameras_visited": [],
             "sightings": [],
             "trajectory": [],
             "legs": [],
-            "blacklisted": False,
         }
 
     sightings = []
@@ -90,15 +109,6 @@ async def get_vehicle_history(
             "bearing_deg": round(deg, 1) if deg is not None else None,
             "direction": compass_label(deg) if deg is not None else None,
         })
-
-    # Blacklist check
-    bl = await db.get(Blacklist, normalized)
-    blacklist_info = None
-    if bl:
-        blacklist_info = {
-            "reason": bl.reason,
-            "added_at": bl.added_at.isoformat(),
-        }
 
     return {
         "plate_number": normalized,

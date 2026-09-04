@@ -94,6 +94,7 @@ async def list_alerts(
     db: AsyncSession = Depends(get_db),
     alert_type: str | None = Query(None),
     resolved: bool | None = Query(None),
+    plate_number: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
@@ -104,6 +105,8 @@ async def list_alerts(
         query = query.where(Alert.alert_type == alert_type)
     if resolved is not None:
         query = query.where(Alert.resolved == resolved)
+    if plate_number:
+        query = query.where(Alert.plate_number == plate_number.upper().strip())
 
     query = query.order_by(desc(Alert.timestamp)).limit(limit).offset(offset)
     result = await db.execute(query)
@@ -121,6 +124,7 @@ async def list_alerts(
             "alert_type": alert.alert_type,
             "resolved": alert.resolved,
             "details": alert.details,
+            "source": alert.source,
         }
         for alert, cam in rows
     ]
@@ -184,6 +188,7 @@ async def simulate_alert(
         alert_type=alert_type,
         resolved=False,
         details=message,
+        source="simulated",
     )
     db.add(alert)
     await db.commit()
@@ -197,6 +202,7 @@ async def simulate_alert(
         alert_type=alert_type,
         timestamp=timestamp,
         details=message,
+        source="simulated",
     )
     logger.info(f"Simulated alert fired: {plate} @ {camera.name} ({alert_type})")
 
@@ -208,4 +214,5 @@ async def simulate_alert(
         "camera_name": camera.name,
         "alert_type": alert_type,
         "details": message,
+        "source": "simulated",
     }

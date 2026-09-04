@@ -6,6 +6,7 @@ import {
 } from 'lucide-react'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
 import Toast from './Toast'
+import ErrorBoundary from './ErrorBoundary'
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Live Map', icon: Map, id: 'nav-dashboard' },
@@ -95,7 +96,9 @@ export default function Layout() {
 
       {/* ── Page content ─────────────────────────────────────── */}
       <main className="flex-1 overflow-hidden page-fade-in" key={location.pathname}>
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       <Toast />

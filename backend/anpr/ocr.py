@@ -116,6 +116,75 @@ def _validate_plate(plate: str) -> bool:
     return state_code in _VALID_STATE_CODES
 
 
+# ── Position-aware character-confusion correction ──────────────────────────
+# A read that's correct except for one confused character (a district-code
+# digit read as its letter lookalike, or vice versa) would otherwise be
+# discarded outright by _validate_plate's strict regex — this recovers those
+# using well-established, low-ambiguity OCR confusion pairs, corrected only
+# at positions where the plate's own structure says which class is expected
+# (never blindly substituted everywhere).
+_DIGIT_TO_LETTER = {"0": "O", "1": "I", "5": "S", "8": "B", "2": "Z"}
+_LETTER_TO_DIGIT = {"O": "0", "I": "1", "S": "5", "B": "8", "Z": "2"}
+
+
+def _expected_classes_standard(length: int) -> list[str] | None:
+    """
+    Standard plate: 2 letters (state) + 2 digits (district) + 1-3 letters
+    (series) + 4 digits (number). Length is 9, 10, or 11 depending on series
+    length, but the first 4 and last 4 characters are fixed-class regardless
+    of which variant it is — only those need to be pinned down structurally.
+    """
+    if length not in (9, 10, 11):
+        return None
+    classes = ["letter"] * length
+    classes[2] = "digit"
+    classes[3] = "digit"
+    for i in range(length - 4, length):
+        classes[i] = "digit"
+    return classes
+
+
+def _expected_classes_bh(length: int) -> list[str] | None:
+    """BH series: 2 digits (year) + 'BH' + 4 digits (number) + 1-2 letters (class)."""
+    if length not in (9, 10):
+        return None
+    classes = ["digit", "digit", "letter", "letter"] + ["digit"] * 4
+    classes += ["letter"] * (length - 8)
+    return classes
+
+
+def _apply_confusion_correction(plate: str, classes: list[str]) -> str:
+    corrected = []
+    for ch, expected in zip(plate, classes):
+        if expected == "letter" and ch.isdigit() and ch in _DIGIT_TO_LETTER:
+            corrected.append(_DIGIT_TO_LETTER[ch])
+        elif expected == "digit" and ch.isalpha() and ch in _LETTER_TO_DIGIT:
+            corrected.append(_LETTER_TO_DIGIT[ch])
+        else:
+            corrected.append(ch)
+    return "".join(corrected)
+
+
+def _correct_plate_confusions(plate: str) -> str:
+    """
+    Try to fix common OCR digit/letter confusions (0/O, 1/I, 5/S, 8/B, 2/Z)
+    using the plate's own length to infer which positions must be letters
+    vs digits — standard format tried first (far more common), then
+    BH-series. Returns the original string unchanged if neither structural
+    template applies, or if the correction doesn't actually yield a valid
+    plate (never returns an unvalidated guess).
+    """
+    for classes_fn in (_expected_classes_standard, _expected_classes_bh):
+        classes = classes_fn(len(plate))
+        if classes is None:
+            continue
+        corrected = _apply_confusion_correction(plate, classes)
+        if _validate_plate(corrected):
+            return corrected
+    return plate
+# ─────────────────────────────────────────────────────────────────────────────
+
+
 class PlateOCR:
     """
     PaddleOCR wrapper for license plate character recognition.
@@ -182,15 +251,25 @@ class PlateOCR:
             return "", 0.0
 
         # ── Hard gate: reject anything that isn't a valid Indian plate ──────
-        if not _validate_plate(normalized):
-            logger.info(
-                f"OCR rejected (non-plate text): '{normalized}' "
-                f"(raw: '{raw_text}', conf: {avg_conf:.2f})"
-            )
-            return "", 0.0
+        # Before rejecting outright, try correcting well-known OCR digit/letter
+        # confusions at positions where the plate's own structure says which
+        # character class is expected — recovers reads that are correct except
+        # for one confused character, instead of discarding them.
+        final_plate = normalized
+        if not _validate_plate(final_plate):
+            corrected = _correct_plate_confusions(normalized)
+            if corrected != normalized and _validate_plate(corrected):
+                logger.info(f"OCR corrected '{normalized}' -> '{corrected}' (character-confusion fix)")
+                final_plate = corrected
+            else:
+                logger.info(
+                    f"OCR rejected (non-plate text): '{normalized}' "
+                    f"(raw: '{raw_text}', conf: {avg_conf:.2f})"
+                )
+                return "", 0.0
         # ────────────────────────────────────────────────────────────────────
 
-        return normalized, avg_conf
+        return final_plate, avg_conf
 
 
 # Singleton instance

@@ -9,7 +9,7 @@ import json
 import logging
 from pathlib import Path
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.base import Base, engine, AsyncSessionLocal
@@ -24,6 +24,29 @@ async def create_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     logger.info("Database tables created / verified.")
+
+
+async def migrate_schema() -> None:
+    """
+    Add columns to already-existing tables that create_tables() can't touch
+    (Base.metadata.create_all only creates missing TABLES, never adds a
+    missing column to a table that already exists) — so a schema change
+    against a populated demo DB needs an explicit, idempotent ALTER here.
+
+    SQLite-only: production Postgres deployments should use a real migration
+    tool (Alembic) instead of this ad-hoc check.
+    """
+    if settings.DB_MODE != "sqlite":
+        return
+
+    async with engine.begin() as conn:
+        result = await conn.execute(text("PRAGMA table_info(alerts)"))
+        columns = {row[1] for row in result.fetchall()}
+        if "source" not in columns:
+            await conn.execute(
+                text("ALTER TABLE alerts ADD COLUMN source TEXT NOT NULL DEFAULT 'detection'")
+            )
+            logger.info("Migrated: added alerts.source column.")
 
 
 async def seed_cameras() -> None:
@@ -90,7 +113,8 @@ async def seed_blacklist() -> None:
 
 
 async def init_db() -> None:
-    """Full DB initialization — tables + seeds."""
+    """Full DB initialization — tables + migrations + seeds."""
     await create_tables()
+    await migrate_schema()
     await seed_cameras()
     await seed_blacklist()

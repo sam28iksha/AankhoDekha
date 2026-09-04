@@ -30,6 +30,13 @@ export interface PlateEvent {
   snapshot_path?: string
 }
 
+export interface LegRoute {
+  coords: [number, number][]
+  distance_km: number
+  duration_min: number
+  is_primary: boolean
+}
+
 export interface TrajectoryLeg {
   from_camera_id: string
   to_camera_id: string
@@ -92,6 +99,7 @@ export interface AlertEntry {
   alert_type: 'blacklist_hit' | 'anomaly'
   resolved: boolean
   details?: string
+  source: 'detection' | 'simulated'
 }
 
 export interface Summary {
@@ -171,6 +179,13 @@ export const getCongestion = (): Promise<CongestionEntry[]> =>
 export const getSpeedEstimates = (): Promise<SpeedEstimate[]> =>
   api.get('/analytics/speed').then(r => r.data)
 
+export const getLegRoute = (
+  fromLat: number, fromLng: number, toLat: number, toLng: number
+): Promise<LegRoute[]> =>
+  api.get('/routing/leg', {
+    params: { from_lat: fromLat, from_lng: fromLng, to_lat: toLat, to_lng: toLng },
+  }).then(r => r.data.routes)
+
 export const getVehicleHistory = (plate: string): Promise<VehicleHistory> =>
   api.get(`/vehicle/${encodeURIComponent(plate)}/history`).then(r => r.data)
 
@@ -186,6 +201,7 @@ export const getTopPlates = (limit = 20): Promise<PlateSearchResult[]> =>
 export const getAlerts = (params?: {
   alert_type?: string
   resolved?: boolean
+  plate_number?: string
   limit?: number
   offset?: number
 }): Promise<AlertEntry[]> =>
@@ -193,6 +209,13 @@ export const getAlerts = (params?: {
 
 export const resolveAlert = (id: number) =>
   api.put(`/alerts/${id}/resolve`).then(r => r.data)
+
+// Fires a demo/emergency-fallback alert — clearly tagged source: "simulated"
+// server-side, never mistaken for a real detection.
+export const simulateAlert = (plateNumber?: string, alertType: 'blacklist_hit' | 'anomaly' = 'blacklist_hit') =>
+  api.post('/alerts/simulate', null, {
+    params: { plate_number: plateNumber, alert_type: alertType },
+  }).then(r => r.data)
 
 export const startIngestion = (camera_id: string) =>
   api.post(`/ingest/${camera_id}`).then(r => r.data)

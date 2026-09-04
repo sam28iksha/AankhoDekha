@@ -34,6 +34,9 @@ data/previews/
 # Ad-hoc test uploads (Blacklist page "Test Detection" tool)
 data/uploads/
 
+# scripts/compare_ocr.py output — regenerated on demand
+data/ocr_comparison/
+
 # Video files (large — don't commit)
 data/sample_videos/*.mp4
 data/sample_videos/*.avi

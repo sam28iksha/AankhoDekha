@@ -4,13 +4,14 @@ Counts plate events per camera/time bucket.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 from typing import List, Dict, Any
 
 from sqlalchemy import select, func, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import PlateEvent, Camera
+from analytics._time import data_now
 
 
 async def get_density(
@@ -22,7 +23,7 @@ async def get_density(
     Return event counts per camera over the last `hours` hours,
     bucketed into `bucket_minutes`-minute windows.
     """
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    since = await data_now(db) - timedelta(hours=hours)
 
     # Aggregate by camera
     result = await db.execute(
@@ -60,7 +61,7 @@ async def get_citywide_timeseries(
     Return city-wide hourly event counts across all cameras — backs the
     Analytics page's "Traffic Flow Trend" chart.
     """
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    since = await data_now(db) - timedelta(hours=hours)
 
     result = await db.execute(
         select(
@@ -84,7 +85,7 @@ async def get_density_timeseries(
     Return hourly event counts for a specific camera.
     Used for per-camera sparkline charts.
     """
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    since = await data_now(db) - timedelta(hours=hours)
 
     # SQLite-compatible: use strftime for bucketing
     result = await db.execute(

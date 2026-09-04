@@ -63,6 +63,7 @@ class AlertManager:
         alert_type: str,
         timestamp: datetime,
         details: str | None = None,
+        source: str = "detection",
     ) -> None:
         await self.broadcast({
             "type": "alert",
@@ -71,6 +72,7 @@ class AlertManager:
             "camera_id": camera_id,
             "camera_name": camera_name,
             "alert_type": alert_type,
+            "source": source,
             "timestamp": timestamp.isoformat(),
             "details": details,
         })

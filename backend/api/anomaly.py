@@ -89,6 +89,7 @@ async def check_speed_anomaly(
         alert_type="anomaly",
         resolved=False,
         details=details,
+        source="detection",
     )
     db.add(alert)
     await db.flush()
@@ -101,5 +102,6 @@ async def check_speed_anomaly(
         alert_type="anomaly",
         timestamp=timestamp,
         details=details,
+        source="detection",
     )
     logger.warning(f"🚧 ROUTE ANOMALY: {plate_number} — {details}")

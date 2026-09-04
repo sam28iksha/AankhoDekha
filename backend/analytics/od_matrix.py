@@ -4,13 +4,14 @@ Computes vehicle flows between camera pairs.
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone, timedelta
+from datetime import timedelta
 from typing import List, Dict, Any
 
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import PlateEvent, Camera
+from analytics._time import data_now
 
 
 async def get_od_matrix(
@@ -28,7 +29,7 @@ async def get_od_matrix(
       "flows": [{"origin": "cam_01", "destination": "cam_02", "count": 42}, ...]
     }
     """
-    since = datetime.now(timezone.utc) - timedelta(hours=hours)
+    since = await data_now(db) - timedelta(hours=hours)
 
     # Fetch all events sorted by plate + time
     result = await db.execute(

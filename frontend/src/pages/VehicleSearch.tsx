@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react'
-import { Search, AlertTriangle, Clock, Navigation, Gauge } from 'lucide-react'
+import { Search, AlertTriangle, Clock, Navigation, Gauge, Route, GitCommitHorizontal } from 'lucide-react'
 import MapView from '../components/MapView'
 import RadarLoader from '../components/RadarLoader'
 import { getVehicleHistory, type VehicleHistory, type PlateEvent, type TrajectoryLeg } from '../lib/api'
@@ -76,6 +76,7 @@ export default function VehicleSearch() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [scrubberIndex, setScrubberIndex] = useState(0)
+  const [showRoutes, setShowRoutes] = useState(false)
 
   const search = useCallback(async () => {
     if (!query.trim()) return
@@ -226,10 +227,29 @@ export default function VehicleSearch() {
       {/* ── Map (trajectory) ───────────────────────────────────── */}
       <div className="flex-1 p-3">
         <div className="map-frame h-full">
+          {(history?.trajectory?.length ?? 0) >= 2 && (
+            <div className="map-mode-toggle">
+              <button
+                className={showRoutes ? '' : 'active'}
+                onClick={() => setShowRoutes(false)}
+              >
+                <GitCommitHorizontal size={13} />
+                Trajectory
+              </button>
+              <button
+                className={showRoutes ? 'active' : ''}
+                onClick={() => setShowRoutes(true)}
+              >
+                <Route size={13} />
+                Possible Routes
+              </button>
+            </div>
+          )}
           <MapView
             trajectory={trajectorySlice.length >= 2 ? trajectorySlice : history?.trajectory}
             trajectoryLabel={history?.plate_number}
             legs={trajectorySlice.length >= 2 ? history?.legs.slice(0, trajectorySlice.length - 1) : history?.legs}
+            showRoutedPaths={showRoutes}
           />
         </div>
       </div>

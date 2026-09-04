@@ -194,7 +194,7 @@ export default function OCRPreview() {
               <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Recognized Plates ({manifest.plates.length})
               </div>
-              <div className="flex flex-col gap-2 overflow-y-auto" style={{ maxHeight: 460 }}>
+              <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0">
                 {manifest.plates.length === 0 ? (
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>No plate cleared format validation in this clip.</div>
                 ) : (

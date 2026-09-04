@@ -7,8 +7,6 @@ DELETE /blacklist/{plate_number} — remove a plate from the blacklist
 from __future__ import annotations
 
 import logging
-import random
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
@@ -16,49 +14,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.base import get_db
-from db.models import Alert, Blacklist, Camera
-from api.alert_manager import alert_manager
+from db.models import Blacklist
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/blacklist", tags=["blacklist"])
-
-
-async def _fire_spotted_alert(db: AsyncSession, plate_number: str, reason: str | None) -> None:
-    """
-    As soon as a plate is blacklisted, immediately simulate it being "spotted"
-    at a random camera — for demo purposes, so the notification appears
-    without needing a real detection to happen first.
-    """
-    cam_result = await db.execute(select(Camera))
-    cameras = cam_result.scalars().all()
-    if not cameras:
-        return
-    camera = random.choice(cameras)
-    timestamp = datetime.now(timezone.utc)
-    details = f"Blacklisted vehicle spotted. Reason: {reason}" if reason else "Blacklisted vehicle spotted."
-
-    alert = Alert(
-        plate_number=plate_number,
-        camera_id=camera.id,
-        timestamp=timestamp,
-        alert_type="blacklist_hit",
-        resolved=False,
-        details=details,
-    )
-    db.add(alert)
-    await db.commit()
-    await db.refresh(alert)
-
-    await alert_manager.broadcast_alert(
-        alert_id=alert.id,
-        plate_number=plate_number,
-        camera_id=camera.id,
-        camera_name=camera.name,
-        alert_type="blacklist_hit",
-        timestamp=timestamp,
-        details=details,
-    )
-    logger.info(f"Blacklist: simulated spotted-alert for {plate_number} @ {camera.name}")
 
 
 class BlacklistCreate(BaseModel):
@@ -83,19 +42,23 @@ async def list_blacklist(db: AsyncSession = Depends(get_db)):
 
 @router.post("")
 async def add_to_blacklist(payload: BlacklistCreate, db: AsyncSession = Depends(get_db)):
-    """Add a plate to the blacklist (or update its reason if already present)."""
+    """
+    Add a plate to the blacklist (or update its reason if already present).
+    This only manages the watchlist — it does not, by itself, mean the
+    vehicle has been spotted. Real alerts come from an actual detection
+    matching this entry (see api/ingest.py), or, for demo purposes, an
+    explicit call to POST /alerts/simulate.
+    """
     normalized = payload.plate_number.upper().strip()
     existing = await db.get(Blacklist, normalized)
     if existing:
         existing.reason = payload.reason
         await db.commit()
-        await _fire_spotted_alert(db, normalized, payload.reason)
         return {"message": "Blacklist entry updated", "plate_number": normalized}
 
     db.add(Blacklist(plate_number=normalized, reason=payload.reason))
     await db.commit()
     logger.info(f"Blacklist: added {normalized}")
-    await _fire_spotted_alert(db, normalized, payload.reason)
     return {"message": "Plate added to blacklist", "plate_number": normalized}
 
 

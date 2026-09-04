@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react'
-import { Ban, Plus, Trash2, UploadCloud, CheckCircle2, AlertTriangle, FileImage, FileVideo } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Ban, Plus, Trash2, UploadCloud, CheckCircle2, AlertTriangle, FileImage, FileVideo, Clapperboard, ExternalLink } from 'lucide-react'
 import RadarLoader from '../components/RadarLoader'
 import { format } from 'date-fns'
 import {
-  getBlacklist, addToBlacklist, removeFromBlacklist, uploadDetection,
+  getBlacklist, addToBlacklist, removeFromBlacklist, uploadDetection, simulateAlert,
+  getIngestionStatusFor,
   type BlacklistEntry, type UploadResult,
 } from '../lib/api'
 
@@ -15,12 +17,21 @@ export default function BlacklistView() {
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [simulating, setSimulating] = useState<string | null>(null)
 
   const [file, setFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [videoStatus, setVideoStatus] = useState<{ status: string; events_written?: number; errors?: string[] } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const videoPollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  const stopVideoPolling = useCallback(() => {
+    if (videoPollRef.current) { clearInterval(videoPollRef.current); videoPollRef.current = null }
+  }, [])
+
+  useEffect(() => () => stopVideoPolling(), [stopVideoPolling])
 
   const fetchEntries = useCallback(async () => {
     setLoading(true)
@@ -63,14 +74,47 @@ export default function BlacklistView() {
     }
   }
 
+  const handleSimulate = async (plateNumber: string) => {
+    setSimulating(plateNumber)
+    try {
+      await simulateAlert(plateNumber, 'blacklist_hit')
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setSimulating(null)
+    }
+  }
+
   const handleUpload = async () => {
     if (!file) return
     setUploading(true)
     setUploadError(null)
     setUploadResult(null)
+    setVideoStatus(null)
+    stopVideoPolling()
     try {
       const result = await uploadDetection(file)
       setUploadResult(result)
+
+      // Images resolve synchronously (result already has detections).
+      // Videos are queued as a background job — the backend tells us to poll
+      // for it, so actually do that instead of leaving the user staring at
+      // a static "processing" message forever.
+      if (result.type === 'video' && result.camera_id) {
+        setVideoStatus({ status: 'running' })
+        videoPollRef.current = setInterval(async () => {
+          try {
+            const s = await getIngestionStatusFor(result.camera_id)
+            setVideoStatus(s)
+            if (s.status === 'done' || s.status === 'error') {
+              stopVideoPolling()
+            }
+          } catch (err) {
+            console.error(err)
+            stopVideoPolling()
+          }
+        }, 1500)
+      }
     } catch (err: any) {
       setUploadError(err?.response?.data?.detail || 'Upload failed — check the file is a supported image/video.')
     } finally {
@@ -87,7 +131,7 @@ export default function BlacklistView() {
             Blacklist &amp; Real-Time Detection Test
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Add plates to the watchlist, then upload footage or a photo to see a live alert fire the moment a match is found.
+            Add plates to the watchlist — this only updates the list, it doesn't fire an alert by itself. Real alerts fire when actual footage is processed and a match is found (upload below, or process a live camera feed).
           </p>
         </div>
 
@@ -173,9 +217,22 @@ export default function BlacklistView() {
             {uploadResult && (
               <div className="mt-4 flex flex-col gap-2">
                 {uploadResult.type === 'video' ? (
-                  <div className="text-xs p-3 rounded" style={{ background: 'rgba(0,180,216,0.08)', border: '1px solid rgba(0,180,216,0.2)', color: 'var(--accent-blue-light)' }}>
-                    {uploadResult.message || 'Video queued for background processing — alerts will stream in live.'}
-                  </div>
+                  videoStatus?.status === 'done' ? (
+                    <div className="text-xs p-3 rounded flex items-center gap-2" style={{ background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.2)', color: 'var(--accent-green)' }}>
+                      <CheckCircle2 size={13} />
+                      Done — {videoStatus.events_written ?? 0} plate event(s) processed. Any blacklist match already fired as a live alert — check the Alerts page.
+                    </div>
+                  ) : videoStatus?.status === 'error' ? (
+                    <div className="text-xs p-3 rounded flex items-center gap-2" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: '#ff8a94' }}>
+                      <AlertTriangle size={13} />
+                      Processing failed{videoStatus.errors?.length ? `: ${videoStatus.errors[0]}` : '.'}
+                    </div>
+                  ) : (
+                    <div className="text-xs p-3 rounded flex items-center gap-2" style={{ background: 'rgba(0,180,216,0.08)', border: '1px solid rgba(0,180,216,0.2)', color: 'var(--accent-blue-light)' }}>
+                      <RadarLoader size={13} />
+                      Processing video{videoStatus?.events_written ? ` — ${videoStatus.events_written} event(s) so far…` : '…'}
+                    </div>
+                  )
                 ) : uploadResult.detections && uploadResult.detections.length > 0 ? (
                   uploadResult.detections.map((d, i) => (
                     <div
@@ -219,7 +276,7 @@ export default function BlacklistView() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
-                  {['Plate', 'Reason', 'Added', ''].map(h => (
+                  {['Plate', 'Reason', 'Added', 'Alerts', ''].map(h => (
                     <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
@@ -231,6 +288,25 @@ export default function BlacklistView() {
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{e.reason || '—'}</td>
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(e.added_at), 'dd MMM yyyy HH:mm')}</td>
                     <td className="px-5 py-3">
+                      <Link
+                        to={`/alerts?plate=${encodeURIComponent(e.plate_number)}`}
+                        className="text-xs flex items-center gap-1 hover:underline"
+                        style={{ color: 'var(--accent-blue-light)' }}
+                      >
+                        View alerts <ExternalLink size={11} />
+                      </Link>
+                    </td>
+                    <td className="px-5 py-3 flex items-center gap-2">
+                      <button
+                        id={`blacklist-simulate-${e.plate_number}`}
+                        className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                        onClick={() => handleSimulate(e.plate_number)}
+                        disabled={simulating === e.plate_number}
+                        title="Fires a clearly-labeled simulated alert — demo fallback, not a real detection"
+                      >
+                        {simulating === e.plate_number ? <RadarLoader size={11} /> : <Clapperboard size={11} />}
+                        Simulate sighting
+                      </button>
                       <button
                         id={`blacklist-remove-${e.plate_number}`}
                         className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"

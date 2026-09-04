@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     DETECTION_CONFIDENCE_THRESHOLD: float = 0.4
     OCR_CONFIDENCE_THRESHOLD: float = 0.6
 
+    # ── Road-Network Routing (trajectory map legs) ───────────────────
+    # Snaps straight-line camera-to-camera legs onto real roads and offers
+    # alternate paths. Points at the free public OSRM demo server by default
+    # (no API key, but internet-dependent and best-effort/rate-limited) —
+    # swap to a self-hosted OSRM instance URL here for fully offline use.
+    OSRM_BASE_URL: str = "https://router.project-osrm.org"
+    ROUTING_ALTERNATIVES: int = 2
+
     # ── Route Anomaly Detection ─────────────────────────────────────
     # A plate seen at two cameras implying an average speed above this is
     # physically implausible for one vehicle — flagged as a route anomaly

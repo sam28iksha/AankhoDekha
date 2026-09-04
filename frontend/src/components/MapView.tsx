@@ -1,10 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 // leaflet.heat patches L.heatLayer onto the Leaflet namespace
 import 'leaflet.heat'
-import { getCameras, getDensity, type Camera, type CongestionEntry, type TrajectoryLeg } from '../lib/api'
+import { getCameras, getDensity, getLegRoute, type Camera, type CongestionEntry, type TrajectoryLeg, type LegRoute } from '../lib/api'
 import { useCachedFetch } from '../lib/cache'
 
 interface HeatmapOptions {
@@ -24,6 +24,7 @@ interface MapViewProps {
   showHeatmap?: boolean            // default true
   heatmapOptions?: HeatmapOptions  // override radius/blur/gradient for a more vivid look
   lightBasemap?: boolean           // use a normal-brightness basemap instead of the dark theme
+  showRoutedPaths?: boolean        // road-snapped routes + alternates vs a straight camera-to-camera line
 }
 
 const CONGESTION_COLOR: Record<string, string> = {
@@ -108,6 +109,86 @@ function HeatmapLayer({ points, options }: { points: [number, number, number][];
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ── Road-snapped trajectory legs ─────────────────────────────────────────────
+// A camera only confirms a plate was at that exact point at that exact time —
+// not which road it took to the next camera. RoutedLegLine asks the backend
+// (OSRM) for the most probable road route between two consecutive sightings,
+// plus any genuinely distinct alternates, and renders all of them: the
+// primary route styled the same as before (glow + dark casing + dashed
+// orange), alternates as thin muted dashed lines underneath. If routing is
+// ever unavailable (offline, rate-limited, still loading) it falls back to
+// the original straight-line segment so the trajectory never disappears.
+const _legRouteCache = new Map<string, Promise<LegRoute[]>>()
+
+// One color per route rank — index 0 (primary/most probable) keeps the
+// existing orange treatment; each alternate gets its own distinct hue so
+// multiple candidate routes read as genuinely different options rather than
+// one line repeated in gray.
+export const ROUTE_COLORS = ['#ffaa4c', '#38bdf8', '#c084fc', '#4ade80']
+
+function legCacheKey(from: [number, number], to: [number, number]): string {
+  const r = (n: number) => n.toFixed(5)
+  return `${r(from[0])},${r(from[1])}|${r(to[0])},${r(to[1])}`
+}
+
+function RoutedLegLine({
+  from, to, onRouteCount,
+}: {
+  from: [number, number]
+  to: [number, number]
+  onRouteCount?: (count: number) => void
+}) {
+  const [routes, setRoutes] = useState<LegRoute[] | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    const key = legCacheKey(from, to)
+    if (!_legRouteCache.has(key)) {
+      _legRouteCache.set(key, getLegRoute(from[0], from[1], to[0], to[1]).catch(() => []))
+    }
+    _legRouteCache.get(key)!.then(r => {
+      if (cancelled) return
+      setRoutes(r)
+      onRouteCount?.(r.length || 1)
+    })
+    return () => { cancelled = true }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [from[0], from[1], to[0], to[1]])
+
+  const primary = routes?.find(r => r.is_primary)
+  const alternates = routes?.filter(r => !r.is_primary) ?? []
+  const primaryPositions = primary?.coords ?? [from, to]
+
+  return (
+    <>
+      {alternates.map((alt, i) => (
+        <Polyline
+          key={`alt-${i}`}
+          positions={alt.coords}
+          pathOptions={{ color: ROUTE_COLORS[(i + 1) % ROUTE_COLORS.length], weight: 3, opacity: 0.6, dashArray: '4 7', lineCap: 'round' }}
+          interactive={false}
+        />
+      ))}
+      <Polyline positions={primaryPositions} pathOptions={{ color: ROUTE_COLORS[0], weight: 7, opacity: 0.12, lineCap: 'round' }} interactive={false} />
+      <Polyline positions={primaryPositions} pathOptions={{ color: '#0c0d14', weight: 3.5, opacity: 0.7, lineCap: 'round' }} interactive={false} />
+      <Polyline positions={primaryPositions} pathOptions={{ color: ROUTE_COLORS[0], weight: 2, opacity: 0.95, dashArray: '8 5' }} />
+    </>
+  )
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Plain camera-to-camera straight line — the simpler "confirmed sightings
+// only" view, with no road-network assumption at all.
+function StraightLegLine({ positions }: { positions: [number, number][] }) {
+  return (
+    <>
+      <Polyline positions={positions} pathOptions={{ color: '#ffaa4c', weight: 7, opacity: 0.12, lineCap: 'round' }} interactive={false} />
+      <Polyline positions={positions} pathOptions={{ color: '#0c0d14', weight: 3.5, opacity: 0.7, lineCap: 'round' }} interactive={false} />
+      <Polyline positions={positions} pathOptions={{ color: '#ffaa4c', weight: 2, opacity: 0.95, dashArray: '8 5' }} />
+    </>
+  )
+}
+
 export default function MapView({
   trajectory,
   trajectoryLabel,
@@ -118,7 +199,17 @@ export default function MapView({
   showHeatmap = true,
   heatmapOptions,
   lightBasemap = false,
+  showRoutedPaths = false,
 }: MapViewProps) {
+  // Tracks the most routes seen across all legs of the current trajectory,
+  // so the legend can say e.g. "3 possible routes estimated" when at least
+  // one leg has genuine alternates — reset whenever the trajectory or mode
+  // changes so a stale count from a previous search doesn't linger.
+  const [maxRouteOptions, setMaxRouteOptions] = useState(1)
+  useEffect(() => {
+    setMaxRouteOptions(1)
+  }, [trajectory, showRoutedPaths])
+
   // Cached so switching pages and back doesn't re-fetch + re-render from an
   // empty map every time — this data changes slowly relative to a 20s TTL.
   const { data: cameras } = useCachedFetch('map:cameras', getCameras, 30000)
@@ -161,6 +252,7 @@ export default function MapView({
   const center: [number, number] = [28.6139, 77.2090]
 
   return (
+    <div style={{ position: 'relative', height: '100%', width: '100%' }}>
     <MapContainer
       center={center}
       zoom={12}
@@ -234,30 +326,16 @@ export default function MapView({
       {trajectory && trajectory.length >= 1 && (
         <>
           {trajectory.length >= 2 && (
-            <>
-              {/* Faint glow layer underneath — subtle, not a bright halo */}
-              <Polyline
-                positions={trajectory}
-                pathOptions={{ color: '#ffaa4c', weight: 7, opacity: 0.12, lineCap: 'round' }}
-                interactive={false}
-              />
-              {/* Thin dark casing — guarantees the line reads against ANY background
-                  underneath (heatmap reds, congestion markers, light basemap, etc.) */}
-              <Polyline
-                positions={trajectory}
-                pathOptions={{ color: '#0c0d14', weight: 3.5, opacity: 0.7, lineCap: 'round' }}
-                interactive={false}
-              />
-              <Polyline
-                positions={trajectory}
-                pathOptions={{
-                  color: '#ffaa4c',
-                  weight: 2,
-                  opacity: 0.95,
-                  dashArray: '8 5',
-                }}
-              />
-            </>
+            showRoutedPaths
+              ? trajectory.slice(0, -1).map((pos, i) => (
+                  <RoutedLegLine
+                    key={i}
+                    from={pos}
+                    to={trajectory[i + 1]}
+                    onRouteCount={count => setMaxRouteOptions(prev => Math.max(prev, count))}
+                  />
+                ))
+              : <StraightLegLine positions={trajectory} />
           )}
 
           {/* Pulsing highlight marker pinpointing each sighted camera location */}
@@ -279,5 +357,20 @@ export default function MapView({
         </>
       )}
     </MapContainer>
+    {showRoutedPaths && trajectory && trajectory.length >= 2 && (
+      <div className="map-route-legend">
+        {maxRouteOptions > 1 && (
+          <span className="map-route-legend-count">{maxRouteOptions} possible routes estimated</span>
+        )}
+        {Array.from({ length: maxRouteOptions }).map((_, i) => (
+          <span key={i}>
+            <i style={{ background: ROUTE_COLORS[i % ROUTE_COLORS.length] }} />
+            {i === 0 ? 'Most probable route' : `Route option ${i + 1}`}
+          </span>
+        ))}
+        <span className="map-route-legend-note">Camera sightings are confirmed; the road path between them is inferred.</span>
+      </div>
+    )}
+    </div>
   )
 }
