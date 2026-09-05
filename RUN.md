@@ -1,255 +1,112 @@
-# NAGARNETRA — Run Guide
-### Smart India Hackathon 2026 · Team: The Underthinker
+# RUN.md — NAGARNETRA setup & demo walkthrough
 
----
+## 1. Prerequisites
 
-## Prerequisites
+- Docker + Docker Compose
+- That's it — no local Python/Node install needed, everything runs in containers.
 
-- Docker Desktop (any recent version) with Compose V2 (`docker compose` not `docker-compose`)
-- At least 8 GB RAM (PaddleOCR + YOLOv8 are memory-hungry at first load)
-- Internet access for the first build (downloads Python packages + Paddle/YOLO model weights)
-- Video files in `data/sample_videos/` (see "Providing Video Files" below)
-
----
-
-## Quick Start (Recommended)
-
-### 1. Clone & configure
+## 2. First-time setup
 
 ```bash
-git clone <your-repo-url>
-cd NAGARNETRA
 cp .env.example .env
-# No edits required for local demo — defaults use SQLite, port 8000/5173
 ```
 
-### 2. Drop in your video files
+Defaults in `.env.example` work out of the box (SQLite, no external DB needed). Only change values if you know you need to (e.g. switching to PostgreSQL, changing ports).
 
-```
-data/sample_videos/
-  cam_01.mp4    ← Connaught Place footage
-  cam_02.mp4    ← ITO footage
-  cam_03.mp4    ← AIIMS footage
-  cam_04.mp4    ← Dhaula Kuan footage
-  cam_05.mp4    ← Karol Bagh footage
-  cam_06.mp4    ← Kashmere Gate ISBT footage
-  cam_07.mp4    ← Nehru Place footage
-  cam_08.mp4    ← Rajouri Garden footage
-  cam_09.mp4    ← Akshardham footage
-  cam_10.mp4    ← Rohini footage
-  cam_11.mp4    ← India Gate footage
-  cam_12.mp4    ← Lajpat Nagar footage
-```
+Optional: drop a fine-tuned YOLOv8 checkpoint at `models/best.pt`. If absent, the detector falls back to a HuggingFace-hosted generic plate model, then to generic COCO weights (lower accuracy) — see `backend/anpr/detector.py` for the exact fallback order.
 
-> **Filename convention is the only convention.** Camera identity comes purely from the filename. `cam_03.mp4` → Camera cam_03 → "AIIMS" coordinates. You do not need real footage from AIIMS — any traffic video renamed `cam_03.mp4` works. See `SETUP_REQUIREMENTS.md` for where to download free traffic footage.
+Camera video files go in `data/sample_videos/`, named to match each camera's ID in `data/cameras.json` (e.g. `cam_01.mp4`).
 
-> **Trajectory demo requirement:** splice a few seconds of footage containing the *same license plate* into at least 2–3 different `cam_XX.mp4` files. This makes that plate appear at multiple cameras, enabling the full trajectory reconstruction demo. `DL01AB2345` is pre-seeded as a demo trajectory plate.
-
-### 3. Seed demo data (run before first demo recording)
+## 3. Start everything
 
 ```bash
-# Even without video files, this populates the DB with synthetic data
-# so the dashboard shows traffic, analytics, and alerts immediately.
-cd NAGARNETRA
-pip install -r backend/requirements.txt  # if running seed script locally
-python scripts/seed_demo.py
+docker compose build
+docker compose up -d
 ```
 
-Or inside Docker after Step 4:
+- Backend: http://localhost:8000 (health check: `GET /health`)
+- Frontend: http://localhost:5173
+
+To use PostgreSQL instead of the SQLite default:
+```bash
+DB_MODE=postgres docker compose --profile postgres up -d
+```
+
+## 4. Rebuilding after changes
+
+**Backend Python source** is baked into the image (`COPY . .` in the Dockerfile) — a code change needs a rebuild:
+```bash
+docker compose build backend && docker compose up -d backend
+```
+
+**`data/`, `models/`, `scripts/`** are volume-mounted (bind-mounted, not baked in) — editing a file there, or dropping in a new `models/best.pt`, just needs a restart, no rebuild:
+```bash
+docker compose restart backend
+```
+Note: `docker compose restart` reuses the existing container (keeps old env vars); if you changed `.env`, use `docker compose up -d` instead, which recreates the container and picks up the new values.
+
+**Frontend** is a static build — any source change needs a rebuild:
+```bash
+docker compose build frontend && docker compose up -d frontend
+```
+
+## 5. Seeding demo data
 
 ```bash
-# PYTHONPATH=/app is already set in the backend service (docker-compose.yml)
-docker compose exec backend python /app/scripts/seed_demo.py
-
+docker compose exec backend python scripts/seed_demo.py
 ```
 
-### 4. Start everything
-
+Or ingest real footage into a specific camera:
 ```bash
-docker compose up --build
+curl -X POST "http://localhost:8000/ingest/cam_01"
+curl "http://localhost:8000/ingest/status/cam_01"   # poll for progress
 ```
 
-**First build takes 5–15 minutes** (downloading Python packages, YOLO weights, PaddleOCR models).
-Subsequent starts: under 30 seconds.
+Ingest one camera at a time — running many cameras' ingestion concurrently can overload the shared inference thread pool and cause requests to hang. Sequential is safe and each camera typically finishes in under a minute.
 
-### 5. Open the dashboard
-
-| Service | URL |
-|---|---|
-| **Frontend (dashboard)** | http://localhost:5173 |
-| **Backend API** | http://localhost:8000 |
-| **API Docs (Swagger)** | http://localhost:8000/docs |
-
----
-
-## Running Ingestion (Video → DB)
-
-Once your video files are in `data/sample_videos/`, trigger ingestion:
-
-**Option A — via API (any camera):**
+After ingesting, check what got detected before picking blacklist candidates:
 ```bash
-curl -X POST http://localhost:8000/ingest/cam_01
-curl -X POST http://localhost:8000/ingest/cam_02
-# ... repeat for each camera
+docker compose exec backend python scripts/list_detected_plates.py --top 20
 ```
 
-**Option B — CLI script (all cameras at once):**
+Add a plate to the blacklist via the API or the Blacklist page in the UI:
 ```bash
-# Run from project root with backend environment active
-python scripts/ingest_videos.py
-
-# Or with Docker (PYTHONPATH=/app pre-set in docker-compose.yml):
-docker compose exec backend python /app/scripts/ingest_videos.py
-
+curl -X POST "http://localhost:8000/blacklist" \
+  -H "Content-Type: application/json" \
+  -d '{"plate_number":"MH02IA3852","reason":"Reported stolen"}'
 ```
 
-**Option C — specific camera + debug options:**
+## 6. Demo walkthrough
+
+1. **Live Map** (`/dashboard`) — city-wide heatmap and camera network.
+2. **OCR Preview** (`/ocr-preview`) — pick a camera, generate a preview, watch frame-by-frame detection + OCR text.
+3. **Vehicle Search** (`/vehicle`) — search a plate with multiple sightings to see its trajectory; toggle **Trajectory** vs **Possible Routes** on the map.
+4. **Real-time alert demo** — blacklist a plate that was genuinely detected from real footage, then re-run ingestion on that same camera:
+   ```bash
+   curl -X POST "http://localhost:8000/ingest/cam_04"
+   ```
+   Within ~1 minute, a real (not simulated) alert fires live as the pipeline re-detects the match.
+5. **Fallback / instant alert** — if you need a notification on demand without waiting on real footage, use the **"Simulate sighting"** button next to a blacklist entry, or:
+   ```bash
+   curl -X POST "http://localhost:8000/alerts/simulate?alert_type=blacklist_hit"
+   ```
+   This is clearly tagged `source: "simulated"` everywhere it appears — it's an explicit demo aid, not disguised as a real detection.
+6. **Analytics** (`/analytics`) — heatmap, congestion table, OD flows, average speed between camera pairs.
+
+## 7. Comparing OCR accuracy on real footage
+
+Standalone diagnostic — doesn't touch the live app or its config:
 ```bash
-python scripts/ingest_videos.py --camera cam_01 --sample-rate 3 --save-snapshots
+docker compose exec backend python scripts/compare_ocr.py --camera cam_06 --max-detections 20
 ```
+Installs EasyOCR into the running container on first use (not part of the production image), runs both PaddleOCR and EasyOCR against the same real detections, and writes a side-by-side report plus saved crop images to `data/ocr_comparison/`.
 
-Check ingestion progress:
-```bash
-curl http://localhost:8000/ingest/status
-```
+## 8. Fine-tuning the YOLOv8 detector
 
----
+See `training/train_colab.py` — designed to run as Colab cells against a Roboflow-hosted plate dataset. Checkpoints save to Google Drive every epoch (`save_period=1`), so an interrupted Colab session doesn't lose progress — resume from `last.pt` rather than restarting from scratch.
 
-## Blacklist Workflow (Required for Live Alert Demo)
+## 9. Troubleshooting
 
-Run this workflow **after first ingestion** to set up reproducible live alerts:
-
-### Step 1 — List what the system detected
-```bash
-python scripts/list_detected_plates.py
-```
-
-Output:
-```
-═══════════════════════════════════════════════════════════════════════
-  NAGARNETRA — Detected Plates (sorted by sighting count)
-═══════════════════════════════════════════════════════════════════════
-  Rank  Plate          Sightings  Cameras  MaxConf  Last Seen
------------------------------------------------------------------------
-  ★1    DL01AB2345          12       3     94.2%   2026-08-31 14:23:11
-   2    HR26DK4321           8       1     88.7%   2026-08-31 14:21:05
-  ...
-  ★ = plate seen at >1 camera — ideal for trajectory demo + blacklist alert
-```
-
-### Step 2 — Pick 3–4 plates
-
-Recommended picks:
-- **Pick ★ multi-camera plates** — these will fire alerts AND show trajectory
-- **Pick the plate you spliced across multiple cam files** — so the blacklist alert fires while the vehicle is "moving" across Delhi
-
-### Step 3 — Edit `data/blacklist.json`
-
-Replace the placeholder entries with your real picks:
-
-```json
-{
-  "plates": [
-    {
-      "plate_number": "DL01AB2345",
-      "reason": "Stolen vehicle — FIR #DL2026-00891",
-      "added_at": "2026-08-31T00:00:00Z"
-    },
-    {
-      "plate_number": "HR26DK4321",
-      "reason": "Suspected criminal activity",
-      "added_at": "2026-08-31T00:00:00Z"
-    }
-  ]
-}
-```
-
-### Step 4 — Load into DB
-
-```bash
-python scripts/load_blacklist.py
-# or:
-docker compose exec backend python /app/scripts/load_blacklist.py
-
-```
-
-### Step 5 — Re-run ingestion
-
-```bash
-python scripts/ingest_videos.py
-# Blacklist hits will now fire alerts in real-time and appear in the dashboard
-```
-
----
-
-## Manual (Non-Docker) Setup
-
-If Docker is unavailable:
-
-### Backend
-
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-
-# Copy and configure env
-cp ../.env.example ../.env
-
-# Start backend
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install --legacy-peer-deps
-
-# Set API URL
-echo "VITE_API_URL=http://localhost:8000" > .env
-echo "VITE_WS_URL=ws://localhost:8000" >> .env
-
-npm run dev
-```
-
-### Seed data (non-Docker)
-
-```bash
-cd NAGARNETRA   # project root
-python scripts/seed_demo.py
-```
-
----
-
-## Using PostgreSQL Instead of SQLite
-
-If you want to run with PostgreSQL + PostGIS:
-
-```bash
-# Start the db profile in Docker Compose
-docker compose --profile postgres up --build
-
-# In .env, change:
-DB_MODE=postgres
-DATABASE_URL=postgresql+asyncpg://nagarnetra:nagarnetra_pass@localhost:5432/nagarnetra
-```
-
----
-
-## Demo Recording Checklist
-
-- [ ] `docker compose up --build` completed without errors
-- [ ] Dashboard opens at http://localhost:5173
-- [ ] 12 camera markers visible on Delhi map
-- [ ] `python scripts/seed_demo.py` run — stats show traffic data
-- [ ] Video files in `data/sample_videos/`, ingestion run
-- [ ] Blacklist workflow complete — test plate fires alert in dashboard
-- [ ] Vehicle Search → search `DL01AB2345` → trajectory polyline appears on map
-- [ ] Analytics tab — density chart, OD flows, congestion table populated
-- [ ] Alerts tab — blacklist hits visible with camera name and timestamp
-
----
-
-*Good luck with the demo! 🚀*
+- **PaddleOCR build warning about `pyclipper`/`zlib`** during `docker compose build backend` — expected and harmless; it's a one-time warm-up step (`|| true`) that fails in the build environment but succeeds at actual runtime since PaddleOCR lazy-loads its model on first real use.
+- **Analytics panels look empty or inconsistent** — these are windowed against your data's own most recent timestamp, not the wall clock, so they shouldn't go stale over time. If something still looks off, check `GET /analytics/overview` directly to see the raw numbers before assuming the UI is wrong.
+- **A container won't pick up a code change** — see the rebuild-vs-restart distinction in section 4; this is the most common cause of "I changed the file but nothing happened."
