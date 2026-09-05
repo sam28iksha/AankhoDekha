@@ -33,6 +33,14 @@ class Settings(BaseSettings):
     DETECTION_CONFIDENCE_THRESHOLD: float = 0.4
     OCR_CONFIDENCE_THRESHOLD: float = 0.6
 
+    # Synthetic camera auto-created for ad-hoc Test Detection Upload footage
+    # (not a real fixed installation) — excluded from camera-selection and
+    # ranking displays (Analytics congestion/busiest, OCR Preview's camera
+    # picker, map markers) so it doesn't read as part of the real camera
+    # network, while still working correctly as an upload destination and
+    # still showing up honestly on any sighting/alert that came through it.
+    UPLOAD_CAMERA_ID: str = "cam_upload"
+
     # ── Road-Network Routing (trajectory map legs) ───────────────────
     # Snaps straight-line camera-to-camera legs onto real roads and offers
     # alternate paths. Points at the free public OSRM demo server by default

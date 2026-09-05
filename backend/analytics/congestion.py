@@ -10,6 +10,7 @@ from typing import List, Dict, Any
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import settings
 from db.models import PlateEvent, Camera
 from utils.geo import haversine_km as _haversine_km
 from analytics._time import data_now as _data_now
@@ -58,8 +59,10 @@ async def get_congestion(
         for row in base_result.fetchall()
     }
 
-    # Fetch cameras
-    cam_result = await db.execute(select(Camera))
+    # Fetch cameras — excludes the synthetic upload camera, which shouldn't
+    # rank as "most congested" or appear in the congestion table since it's
+    # not a real installation.
+    cam_result = await db.execute(select(Camera).where(Camera.id != settings.UPLOAD_CAMERA_ID))
     cameras = cam_result.scalars().all()
 
     # When there's no prior baseline at all (e.g. a freshly ingested demo
@@ -102,7 +105,7 @@ async def get_congestion(
     return output
 
 
-async def get_speed_estimates(db: AsyncSession, hours: int = 4) -> List[Dict[str, Any]]:
+async def get_speed_estimates(db: AsyncSession, hours: int = 24) -> List[Dict[str, Any]]:
     """
     Estimate average vehicle speed between camera pairs.
     Uses plates seen at >=2 cameras within a reasonable time window.

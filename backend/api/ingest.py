@@ -39,12 +39,14 @@ _IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 _VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv"}
 
 
-async def _get_or_create_upload_camera(db: AsyncSession, camera_id: str, name: str = "Test Upload Camera") -> Camera:
+async def _get_or_create_upload_camera(db: AsyncSession, camera_id: str, name: str = "Mobile ANPR Unit") -> Camera:
     """Return the given camera, auto-creating a synthetic 'upload' camera if needed."""
     cam = await db.get(Camera, camera_id)
     if cam is None:
-        # Central Delhi fallback location for ad-hoc uploaded footage/images.
-        cam = Camera(id=camera_id, name=name, lat=28.6139, lng=77.2090, road_segment="Uploaded Media")
+        # Central Delhi fallback location for ad-hoc uploaded footage/images —
+        # framed as a portable/vehicle-mounted ANPR unit rather than a fixed
+        # installation, since that's what an arbitrary uploaded clip actually is.
+        cam = Camera(id=camera_id, name=name, lat=28.6139, lng=77.2090, road_segment="Mobile Deployment")
         db.add(cam)
         await db.commit()
         await db.refresh(cam)

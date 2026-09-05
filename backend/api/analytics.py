@@ -16,6 +16,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from config import settings
 from db.base import get_db
 from db.models import PlateEvent, Camera, Alert
 from analytics.density import get_density, get_citywide_timeseries
@@ -100,7 +101,7 @@ async def congestion_endpoint(
 
 @router.get("/speed")
 async def speed_endpoint(
-    hours: int = Query(4, ge=1, le=24),
+    hours: int = Query(24, ge=1, le=24),
     db: AsyncSession = Depends(get_db),
 ):
     """Average speed estimates between camera pairs."""
@@ -109,8 +110,12 @@ async def speed_endpoint(
 
 @router.get("/cameras")
 async def get_cameras(db: AsyncSession = Depends(get_db)):
-    """Return all registered cameras with their metadata."""
-    result = await db.execute(select(Camera))
+    """
+    Return all registered cameras with their metadata. Excludes the
+    synthetic upload camera — not a real installation, so it shouldn't
+    appear in camera-selection UI (OCR Preview's picker, map markers).
+    """
+    result = await db.execute(select(Camera).where(Camera.id != settings.UPLOAD_CAMERA_ID))
     cameras = result.scalars().all()
     return [
         {
