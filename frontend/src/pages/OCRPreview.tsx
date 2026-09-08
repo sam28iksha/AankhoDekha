@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Film, Play, Pause, CheckCircle2, AlertTriangle, ScanLine } from 'lucide-react'
+import { Film, Play, Pause, CheckCircle2, AlertTriangle, ScanLine, UploadCloud } from 'lucide-react'
 import RadarLoader from '../components/RadarLoader'
 import {
-  getCameras, startPreview, getPreviewStatus, getPreviewManifest, previewAssetUrl,
+  getCameras, startPreview, uploadPreviewVideo, getPreviewStatus, getPreviewManifest, previewAssetUrl,
   type Camera, type PreviewStatus, type PreviewManifest,
 } from '../lib/api'
 
@@ -13,6 +13,10 @@ export default function OCRPreview() {
   const [manifest, setManifest] = useState<PreviewManifest | null>(null)
   const [frameIndex, setFrameIndex] = useState(0)
   const [playing, setPlaying] = useState(false)
+  const [activeLabel, setActiveLabel] = useState<string | null>(null)
+  const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const playRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -33,17 +37,13 @@ export default function OCRPreview() {
     setFrameIndex(0)
   }, [])
 
-  const handleGenerate = async () => {
-    if (!cameraId) return
-    setManifest(null)
-    setFrameIndex(0)
-    setPlaying(false)
-    await startPreview(cameraId)
-    setStatus({ status: 'processing', progress: 0 })
-
+  // Shared by both the camera-dropdown flow and the upload flow — once a
+  // preview job is started under some ID (a real camera_id or a generated
+  // upload_xxx id), polling/loading the result works identically either way.
+  const pollPreview = useCallback((id: string) => {
     stopPolling()
     pollRef.current = setInterval(async () => {
-      const s = await getPreviewStatus(cameraId)
+      const s = await getPreviewStatus(id)
       setStatus(s)
       if (s.status === 'done' && s.manifest_url) {
         stopPolling()
@@ -52,6 +52,36 @@ export default function OCRPreview() {
         stopPolling()
       }
     }, 1200)
+  }, [stopPolling, loadManifest])
+
+  const handleGenerate = async () => {
+    if (!cameraId) return
+    setManifest(null)
+    setFrameIndex(0)
+    setPlaying(false)
+    const cam = cameras.find(c => c.camera_id === cameraId)
+    setActiveLabel(cam ? `${cam.name} (${cam.camera_id})` : cameraId)
+    await startPreview(cameraId)
+    setStatus({ status: 'processing', progress: 0 })
+    pollPreview(cameraId)
+  }
+
+  const handleUpload = async () => {
+    if (!uploadFile) return
+    setManifest(null)
+    setFrameIndex(0)
+    setPlaying(false)
+    setUploading(true)
+    try {
+      const result = await uploadPreviewVideo(uploadFile)
+      setActiveLabel(`Uploaded: ${uploadFile.name}`)
+      setStatus({ status: 'processing', progress: 0 })
+      pollPreview(result.preview_id)
+    } catch (err: any) {
+      setStatus({ status: 'error', error: err?.response?.data?.detail || 'Upload failed.' })
+    } finally {
+      setUploading(false)
+    }
   }
 
   useEffect(() => () => stopPolling(), [stopPolling])
@@ -97,46 +127,77 @@ export default function OCRPreview() {
         </div>
 
         {/* Controls */}
-        <div className="glass-card p-4 flex items-center gap-3">
-          <select
-            id="preview-camera-select"
-            value={cameraId}
-            onChange={e => setCameraId(e.target.value)}
-            className="text-sm rounded px-3 py-2 outline-none flex-1"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
-          >
-            {cameras.map(c => (
-              <option key={c.camera_id} value={c.camera_id}>{c.name} ({c.camera_id})</option>
-            ))}
-          </select>
-          <button
-            id="generate-preview-btn"
-            className="btn-primary flex items-center gap-2"
-            onClick={handleGenerate}
-            disabled={status.status === 'processing'}
-          >
-            {status.status === 'processing'
-              ? <RadarLoader size={14} />
-              : <Film size={14} />
-            }
-            {status.status === 'processing' ? 'Processing…' : 'Generate Preview'}
-          </button>
-          {status.status === 'processing' && (
-            <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
-              {status.progress ?? 0} frames analyzed…
-            </span>
-          )}
-          {status.status === 'error' && (
-            <span className="text-xs flex items-center gap-1" style={{ color: '#ff8a94' }}>
-              <AlertTriangle size={12} /> {status.error || 'Render failed'}
-            </span>
-          )}
+        <div className="glass-card p-4 flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <select
+              id="preview-camera-select"
+              value={cameraId}
+              onChange={e => setCameraId(e.target.value)}
+              className="text-sm rounded px-3 py-2 outline-none flex-1"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
+            >
+              {cameras.map(c => (
+                <option key={c.camera_id} value={c.camera_id}>{c.name} ({c.camera_id})</option>
+              ))}
+            </select>
+            <button
+              id="generate-preview-btn"
+              className="btn-primary flex items-center gap-2"
+              onClick={handleGenerate}
+              disabled={status.status === 'processing' || uploading}
+            >
+              {status.status === 'processing'
+                ? <RadarLoader size={14} />
+                : <Film size={14} />
+              }
+              {status.status === 'processing' ? 'Processing…' : 'Generate Preview'}
+            </button>
+            {status.status === 'processing' && (
+              <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                {status.progress ?? 0} frames analyzed…
+              </span>
+            )}
+            {status.status === 'error' && (
+              <span className="text-xs flex items-center gap-1" style={{ color: '#ff8a94' }}>
+                <AlertTriangle size={12} /> {status.error || 'Render failed'}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2" style={{ borderTop: '1px solid var(--border)', paddingTop: '12px' }}>
+            <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-muted)' }}>or upload any other video —</span>
+            <input
+              ref={fileInputRef}
+              id="preview-upload-input"
+              type="file"
+              accept="video/*"
+              hidden
+              onChange={e => setUploadFile(e.target.files?.[0] ?? null)}
+            />
+            <button
+              className="btn-secondary flex items-center gap-2 text-xs py-1.5 px-3"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={status.status === 'processing' || uploading}
+            >
+              <UploadCloud size={13} />
+              {uploadFile ? uploadFile.name : 'Choose video'}
+            </button>
+            <button
+              id="preview-upload-btn"
+              className="btn-primary flex items-center gap-2 text-xs py-1.5 px-3"
+              onClick={handleUpload}
+              disabled={!uploadFile || uploading || status.status === 'processing'}
+            >
+              {uploading ? <RadarLoader size={12} /> : <Film size={12} />}
+              {uploading ? 'Uploading…' : 'Upload & Preview'}
+            </button>
+          </div>
         </div>
 
         {!manifest && status.status !== 'processing' && (
           <div className="glass-card p-10 flex flex-col items-center justify-center text-center" style={{ color: 'var(--text-muted)' }}>
             <ScanLine size={32} className="mb-3 opacity-30" />
-            <div className="text-sm">Pick a camera and click Generate Preview</div>
+            <div className="text-sm">Pick a camera and click Generate Preview, or upload any video</div>
             <div className="text-xs mt-1">Renders every sampled frame with detection boxes + live OCR text burned in</div>
           </div>
         )}
@@ -145,6 +206,11 @@ export default function OCRPreview() {
           <div className="grid grid-cols-3 gap-6">
             {/* Frame player */}
             <div className="col-span-2 glass-card p-4">
+              {activeLabel && (
+                <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
+                  Now showing: <span style={{ color: 'var(--text-secondary)' }}>{activeLabel}</span>
+                </div>
+              )}
               <div className="rounded-lg overflow-hidden" style={{ background: '#000' }}>
                 {currentFrame && (
                   <img

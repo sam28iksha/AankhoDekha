@@ -88,7 +88,11 @@ from api.alerts import router as alerts_router
 from api.blacklist import router as blacklist_router
 from api.preview import router as preview_router
 from api.routing import router as routing_router
+from api.auth import router as auth_router
+from api.audit import router as audit_router
 
+app.include_router(auth_router)
+app.include_router(audit_router)
 app.include_router(ingest_router)
 app.include_router(vehicle_router)
 app.include_router(analytics_router)

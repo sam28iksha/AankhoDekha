@@ -18,9 +18,10 @@ from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFi
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from auth.dependencies import require_role
 from config import settings
 from db.base import get_db, AsyncSessionLocal
-from db.models import Camera, PlateEvent, Blacklist, Alert
+from db.models import Camera, PlateEvent, Blacklist, Alert, User
 from anpr.frame_source import VideoFileSource
 from anpr.pipeline import ANPRPipeline, PlateEvent as PipelinePlateEvent
 from anpr.detector import plate_detector
@@ -208,6 +209,7 @@ async def upload_and_detect(
     file: UploadFile = File(...),
     camera_id: str | None = Form(None),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("investigator")),
 ):
     """
     Upload a video or image directly and run detection against it — used by the
@@ -280,6 +282,7 @@ async def start_ingestion(
     camera_id: str,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("investigator")),
 ):
     """
     Start ingesting a video file for the given camera_id.
@@ -320,7 +323,7 @@ async def start_ingestion(
 
 
 @router.get("/status/{camera_id}")
-async def get_ingestion_status(camera_id: str):
+async def get_ingestion_status(camera_id: str, _user: User = Depends(require_role("viewer"))):
     """Get the current ingestion status for a camera."""
     status = _ingestion_status.get(camera_id)
     if status is None:
@@ -329,6 +332,6 @@ async def get_ingestion_status(camera_id: str):
 
 
 @router.get("/status")
-async def get_all_ingestion_status():
+async def get_all_ingestion_status(_user: User = Depends(require_role("viewer"))):
     """Get ingestion status for all cameras."""
     return _ingestion_status

@@ -13,8 +13,9 @@ from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.base import Base, engine, AsyncSessionLocal
-from db.models import Camera, Blacklist
+from db.models import Camera, Blacklist, User
 from config import settings
+from auth.security import hash_password
 
 logger = logging.getLogger(__name__)
 
@@ -112,9 +113,36 @@ async def seed_blacklist() -> None:
     logger.info(f"Seeded {count} blacklist entries into DB.")
 
 
+async def seed_admin_user() -> None:
+    """
+    Seed exactly one bootstrap admin account if the users table is empty —
+    solves "how do I log in the first time" without shipping a fixed
+    account that would exist in every deployment forever. Only fires when
+    NO users exist yet, so it never resets a password an admin has changed.
+    """
+    async with AsyncSessionLocal() as session:
+        result = await session.execute(select(User).limit(1))
+        if result.scalar_one_or_none() is not None:
+            return
+
+        session.add(User(
+            username=settings.INITIAL_ADMIN_USERNAME,
+            password_hash=hash_password(settings.INITIAL_ADMIN_PASSWORD),
+            role="admin",
+            full_name="Bootstrap Admin",
+        ))
+        await session.commit()
+    logger.warning(
+        f"No users existed — seeded bootstrap admin '{settings.INITIAL_ADMIN_USERNAME}'. "
+        "Log in and change this password, or set INITIAL_ADMIN_USERNAME/"
+        "INITIAL_ADMIN_PASSWORD in .env before first startup in a real deployment."
+    )
+
+
 async def init_db() -> None:
     """Full DB initialization — tables + migrations + seeds."""
     await create_tables()
     await migrate_schema()
     await seed_cameras()
     await seed_blacklist()
+    await seed_admin_user()

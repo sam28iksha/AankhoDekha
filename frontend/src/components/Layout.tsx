@@ -2,9 +2,10 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useState, useCallback, useEffect } from 'react'
 import {
   Map, Search, BarChart3, Bell, Eye, Ban, ScanLine,
-  Wifi, WifiOff,
+  Wifi, WifiOff, ClipboardList, UserCog, LogOut,
 } from 'lucide-react'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
+import { useAuth, hasRole } from '../lib/auth'
 import Toast from './Toast'
 import ErrorBoundary from './ErrorBoundary'
 
@@ -17,9 +18,15 @@ const NAV_ITEMS = [
   { to: '/ocr-preview', label: 'OCR Preview', icon: ScanLine, id: 'nav-ocr-preview' },
 ]
 
+const ADMIN_NAV_ITEMS = [
+  { to: '/audit-log', label: 'Audit Log', icon: ClipboardList, id: 'nav-audit-log' },
+  { to: '/users', label: 'Users', icon: UserCog, id: 'nav-users' },
+]
+
 export default function Layout() {
   const [unseenAlerts, setUnseenAlerts] = useState(0)
   const location = useLocation()
+  const { user, logout } = useAuth()
 
   const handleWSMessage = useCallback((msg: WSMessage) => {
     if (msg.type === 'alert') {
@@ -74,9 +81,20 @@ export default function Layout() {
               )}
             </NavLink>
           ))}
+          {hasRole(user, 'admin') && ADMIN_NAV_ITEMS.map(({ to, label, icon: Icon, id }) => (
+            <NavLink
+              key={to}
+              to={to}
+              id={id}
+              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+            >
+              <Icon size={15} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
         </nav>
 
-        {/* WS status + team credit */}
+        {/* WS status + user + logout */}
         <div className="flex items-center gap-4 flex-shrink-0">
           <div className="flex items-center gap-2">
             {connected
@@ -85,9 +103,18 @@ export default function Layout() {
             }
           </div>
           <div className="hidden lg:block text-right leading-tight">
-            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>Team: The Underthinker</div>
-            <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>SIH 2026</div>
+            <div className="text-[11px]" style={{ color: 'var(--text-primary)' }}>{user?.username}</div>
+            <div className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{user?.role}</div>
           </div>
+          <button
+            id="logout-btn"
+            onClick={logout}
+            className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded transition-colors hover:bg-white/5"
+            style={{ color: 'var(--text-muted)' }}
+            title="Log out"
+          >
+            <LogOut size={14} />
+          </button>
         </div>
       </header>
 

@@ -5,6 +5,7 @@ Reads values from environment variables / .env file.
 from __future__ import annotations
 
 import os
+import secrets
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -67,6 +68,22 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:5173,http://localhost:3000"
     LOG_LEVEL: str = "INFO"
 
+    # ── Auth / RBAC ───────────────────────────────────────────────
+    # No default fixed secret on purpose: if JWT_SECRET_KEY isn't set in
+    # .env, a random one is generated per process start (see below) rather
+    # than shipping a shared hardcoded key that would let anyone forge a
+    # token. Trade-off: tokens issued before a restart won't validate after
+    # one, unless a stable value is set in .env for a real deployment.
+    JWT_SECRET_KEY: str = ""
+    JWT_ALGORITHM: str = "HS256"
+    JWT_EXPIRE_MINUTES: int = 480  # one working shift
+
+    # Bootstrap account — seeded once if the users table is empty. Change
+    # the password after first login; this only exists to solve "how do I
+    # log in the first time."
+    INITIAL_ADMIN_USERNAME: str = "admin"
+    INITIAL_ADMIN_PASSWORD: str = "nagarnetra_admin"
+
     def get_database_url(self) -> str:
         """Return the correct async database URL based on DB_MODE."""
         if self.DB_MODE == "postgres":
@@ -86,3 +103,12 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if not settings.JWT_SECRET_KEY:
+    settings.JWT_SECRET_KEY = secrets.token_hex(32)
+    import logging
+    logging.getLogger(__name__).warning(
+        "JWT_SECRET_KEY not set in .env — using a random ephemeral key for "
+        "this process. All logged-in sessions will be invalidated on the "
+        "next restart. Set JWT_SECRET_KEY in .env for a stable secret."
+    )

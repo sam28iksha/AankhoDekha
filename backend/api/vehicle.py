@@ -13,8 +13,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.audit import log_action
+from auth.dependencies import require_role
 from db.base import get_db
-from db.models import PlateEvent, Camera, Blacklist
+from db.models import PlateEvent, Camera, Blacklist, User
 from utils.geo import haversine_km, bearing_deg, compass_label, duration_label
 
 logger = logging.getLogger(__name__)
@@ -26,12 +28,18 @@ async def get_vehicle_history(
     plate_number: str,
     db: AsyncSession = Depends(get_db),
     limit: int = Query(500, ge=1, le=5000),
+    user: User = Depends(require_role("viewer")),
 ):
     """
     Return chronological sighting history for a plate number.
     Each sighting includes camera metadata (lat/lng) for map trajectory drawing.
+
+    This is the single most sensitive read in the system — it reconstructs
+    a specific vehicle's movement history — so every call is audited with
+    who searched, what plate, and when.
     """
     normalized = plate_number.upper().strip()
+    await log_action(db, user, "vehicle_search", target=normalized)
 
     result = await db.execute(
         select(PlateEvent, Camera)
@@ -128,6 +136,7 @@ async def get_vehicle_history(
 async def get_blacklist_status(
     plate_number: str,
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
 ):
     """Check if a plate is on the blacklist."""
     normalized = plate_number.upper().strip()
@@ -145,9 +154,11 @@ async def search_plates(
     q: str = Query(..., min_length=2),
     db: AsyncSession = Depends(get_db),
     limit: int = Query(20, ge=1, le=100),
+    user: User = Depends(require_role("viewer")),
 ):
     """Fuzzy plate search — returns distinct plate numbers matching partial query."""
     normalized = q.upper().strip()
+    await log_action(db, user, "vehicle_search_fuzzy", target=normalized)
     result = await db.execute(
         select(PlateEvent.plate_number, func.count(PlateEvent.id).label("hits"))
         .where(PlateEvent.plate_number.contains(normalized))
@@ -163,6 +174,7 @@ async def search_plates(
 async def get_top_plates(
     db: AsyncSession = Depends(get_db),
     limit: int = Query(20, ge=1, le=200),
+    _user: User = Depends(require_role("viewer")),
 ):
     """Return most-seen plates (useful for blacklist selection after first ingestion)."""
     result = await db.execute(

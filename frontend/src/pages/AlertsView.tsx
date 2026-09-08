@@ -4,6 +4,7 @@ import { AlertTriangle, CheckCircle2, Filter, RefreshCw, Bell, X } from 'lucide-
 import RadarLoader from '../components/RadarLoader'
 import { getAlerts, resolveAlert, type AlertEntry } from '../lib/api'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
+import { useAuth, hasRole } from '../lib/auth'
 import { format, formatDistanceToNow } from 'date-fns'
 
 function AlertTypeBadge({ type }: { type: string }) {
@@ -19,6 +20,8 @@ function SourceBadge({ source }: { source: string }) {
 }
 
 export default function AlertsView() {
+  const { user } = useAuth()
+  const canResolve = hasRole(user, 'investigator')
   const [searchParams, setSearchParams] = useSearchParams()
   const plateFilter = searchParams.get('plate')
 
@@ -216,7 +219,7 @@ export default function AlertsView() {
                       }
                     </td>
                     <td className="px-4 py-3">
-                      {!alert.resolved && (
+                      {!alert.resolved && canResolve && (
                         <button
                           id={`resolve-btn-${alert.id}`}
                           onClick={() => handleResolve(alert.id)}

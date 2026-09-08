@@ -65,3 +65,29 @@ class Alert(Base):
     # "detection" — a real plate match/anomaly found during actual ingestion.
     # "simulated" — fired on demand via POST /alerts/simulate for demo purposes.
     source = Column(String(20), nullable=False, default="detection")
+
+
+class User(Base):
+    __tablename__ = "users"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    username = Column(String(50), unique=True, nullable=False, index=True)
+    password_hash = Column(String(255), nullable=False)
+    role = Column(String(20), nullable=False)  # "admin" | "investigator" | "viewer"
+    full_name = Column(String(100), nullable=True)
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), nullable=False, default=_utcnow)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_log"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    # Denormalized so the record stays meaningful even if the user account
+    # is later deleted — an audit trail must survive its actor being removed.
+    username = Column(String(50), nullable=False)
+    action = Column(String(50), nullable=False, index=True)
+    target = Column(String(200), nullable=True)  # e.g. the plate number involved
+    details = Column(Text, nullable=True)
+    timestamp = Column(DateTime(timezone=True), nullable=False, default=_utcnow, index=True)

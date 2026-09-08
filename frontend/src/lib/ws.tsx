@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from 'react'
+import { getStoredAuth } from './authToken'
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
 
@@ -77,7 +78,16 @@ export function AlertWebSocketProvider({ children }: { children: ReactNode }) {
   const connect = useCallback(() => {
     if (!mountedRef.current) return
 
-    const ws = new WebSocket(`${WS_URL}/alerts`)
+    // Browsers' native WebSocket API can't set an Authorization header, so
+    // the token travels as a query param instead — the server validates it
+    // the same way either transport. No token means no point trying; this
+    // provider only ever mounts inside the authenticated app shell anyway,
+    // but staying defensive here avoids a guaranteed-to-fail connection
+    // attempt in any edge case (e.g. a stale render during logout).
+    const auth = getStoredAuth()
+    if (!auth) return
+
+    const ws = new WebSocket(`${WS_URL}/alerts?token=${encodeURIComponent(auth.token)}`)
     wsRef.current = ws
 
     ws.onopen = () => {

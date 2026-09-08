@@ -25,3 +25,11 @@ numpy==1.26.4
 httpx==0.27.0
 python-multipart==0.0.9
 aiofiles==23.2.1
+
+# Auth / RBAC
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+# passlib 1.7.4's bcrypt-version-detection code breaks under bcrypt>=4.0
+# (removed the __about__.__version__ attribute passlib probes for) —
+# pin explicitly rather than let pip resolve the latest bcrypt.
+bcrypt==3.2.2

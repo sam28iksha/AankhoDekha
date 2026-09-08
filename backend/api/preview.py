@@ -17,12 +17,15 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import uuid
 from pathlib import Path
 
 import cv2
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, File
 
+from auth.dependencies import require_role
 from config import settings
+from db.models import User
 from anpr.detector import plate_detector
 from anpr.ocr import plate_ocr
 from anpr.pipeline import _PlateCluster, _plate_similarity, _CLUSTER_GAP_SECONDS
@@ -32,6 +35,7 @@ router = APIRouter(prefix="/preview", tags=["preview"])
 
 _preview_status: dict[str, dict] = {}
 PREVIEW_ROOT = Path(settings.SNAPSHOTS_DIR).parent / "previews"
+_VIDEO_EXTS = {".mp4", ".avi", ".mov", ".mkv"}
 
 _BOX_GREEN = (0, 200, 0)
 _BOX_ORANGE = (0, 165, 255)
@@ -153,8 +157,46 @@ async def _render_preview(camera_id: str, video_path: str) -> None:
         _preview_status[camera_id] = {"status": "error", "error": str(e)}
 
 
+@router.post("/upload")
+async def start_preview_upload(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    _user: User = Depends(require_role("viewer")),
+):
+    """
+    Render an annotated frame-by-frame preview for an arbitrary uploaded
+    video — not tied to any registered camera. Reuses the exact same
+    _render_preview pipeline as the camera-based flow, keyed by a
+    generated ID instead of a camera_id, so the frontend polls/loads it
+    identically either way.
+
+    Registered BEFORE POST /{camera_id} — route order matters here, since
+    that path parameter would otherwise swallow "/preview/upload" as if
+    camera_id="upload".
+    """
+    ext = Path(file.filename or "").suffix.lower()
+    if ext not in _VIDEO_EXTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported file type '{ext}'. Use one of: {', '.join(sorted(_VIDEO_EXTS))}.",
+        )
+
+    preview_id = f"upload_{uuid.uuid4().hex[:10]}"
+    uploads_dir = Path(settings.VIDEOS_DIR).parent / "uploads"
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    dest_path = uploads_dir / f"{preview_id}{ext}"
+    dest_path.write_bytes(await file.read())
+
+    background_tasks.add_task(_render_preview, preview_id, str(dest_path))
+    return {"message": "Preview render started for uploaded video", "status": "started", "preview_id": preview_id}
+
+
 @router.post("/{camera_id}")
-async def start_preview(camera_id: str, background_tasks: BackgroundTasks):
+async def start_preview(
+    camera_id: str,
+    background_tasks: BackgroundTasks,
+    _user: User = Depends(require_role("viewer")),
+):
     """Render an annotated frame-by-frame preview for a camera's video file."""
     videos_dir = Path(settings.VIDEOS_DIR)
     video_path = None
@@ -174,5 +216,5 @@ async def start_preview(camera_id: str, background_tasks: BackgroundTasks):
 
 
 @router.get("/status/{camera_id}")
-async def preview_status(camera_id: str):
+async def preview_status(camera_id: str, _user: User = Depends(require_role("viewer"))):
     return _preview_status.get(camera_id, {"status": "idle"})

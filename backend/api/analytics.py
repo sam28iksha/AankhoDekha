@@ -16,9 +16,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.dependencies import require_role
 from config import settings
 from db.base import get_db
-from db.models import PlateEvent, Camera, Alert
+from db.models import PlateEvent, Camera, Alert, User
 from analytics.density import get_density, get_citywide_timeseries
 from analytics.od_matrix import get_od_matrix
 from analytics.congestion import get_congestion, get_speed_estimates
@@ -31,6 +32,7 @@ router = APIRouter(prefix="/analytics", tags=["analytics"])
 async def density_endpoint(
     hours: int = Query(24, ge=1, le=168),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
 ):
     """Traffic density per camera over the last N hours."""
     return await get_density(db, hours=hours)
@@ -41,6 +43,7 @@ async def od_matrix_endpoint(
     hours: int = Query(24, ge=1, le=168),
     min_trips: int = Query(1, ge=1),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
 ):
     """Origin-destination flow matrix between camera pairs."""
     return await get_od_matrix(db, hours=hours, min_trips=min_trips)
@@ -50,13 +53,17 @@ async def od_matrix_endpoint(
 async def timeseries_endpoint(
     hours: int = Query(24, ge=1, le=168),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
 ):
     """City-wide hourly traffic volume — feeds the Analytics 'Traffic Flow Trend' chart."""
     return await get_citywide_timeseries(db, hours=hours)
 
 
 @router.get("/overview")
-async def overview_endpoint(db: AsyncSession = Depends(get_db)):
+async def overview_endpoint(
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
+):
     """
     Hero-card numbers for the Analytics page: busiest corridor, most congested
     area, city-wide average speed, and count of active OD routes — computed
@@ -94,6 +101,7 @@ async def congestion_endpoint(
     window_minutes: int = Query(15, ge=5, le=60),
     baseline_hours: int = Query(4, ge=1, le=24),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
 ):
     """Congestion / bottleneck scores per camera."""
     return await get_congestion(db, window_minutes=window_minutes, baseline_hours=baseline_hours)
@@ -103,13 +111,17 @@ async def congestion_endpoint(
 async def speed_endpoint(
     hours: int = Query(24, ge=1, le=24),
     db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
 ):
     """Average speed estimates between camera pairs."""
     return await get_speed_estimates(db, hours=hours)
 
 
 @router.get("/cameras")
-async def get_cameras(db: AsyncSession = Depends(get_db)):
+async def get_cameras(
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
+):
     """
     Return all registered cameras with their metadata. Excludes the
     synthetic upload camera — not a real installation, so it shouldn't
@@ -130,7 +142,10 @@ async def get_cameras(db: AsyncSession = Depends(get_db)):
 
 
 @router.get("/summary")
-async def get_summary(db: AsyncSession = Depends(get_db)):
+async def get_summary(
+    db: AsyncSession = Depends(get_db),
+    _user: User = Depends(require_role("viewer")),
+):
     """
     Dashboard summary stats:
     - Total vehicles seen today

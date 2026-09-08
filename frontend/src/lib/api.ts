@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { getStoredAuth, clearStoredAuth } from './authToken'
 
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
@@ -7,6 +8,34 @@ export const api = axios.create({
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
 })
+
+// Attach the login token to every request automatically — every route in
+// this app requires at least "viewer" now, so this belongs on the shared
+// instance rather than repeated per call site.
+api.interceptors.request.use(config => {
+  const auth = getStoredAuth()
+  if (auth) {
+    config.headers.Authorization = `Bearer ${auth.token}`
+  }
+  return config
+})
+
+// A 401 means the token is missing/expired/invalid — clear it and force
+// back to login rather than leaving the app stuck silently failing every
+// request. A hard redirect (not react-router navigate) since this runs
+// outside any component's context.
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error?.response?.status === 401) {
+      clearStoredAuth()
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
+)
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -284,6 +313,15 @@ export interface PreviewStatus {
 export const startPreview = (cameraId: string): Promise<{ status: string; message: string }> =>
   api.post(`/preview/${cameraId}`).then(r => r.data)
 
+export const uploadPreviewVideo = (file: File): Promise<{ status: string; message: string; preview_id: string }> => {
+  const form = new FormData()
+  form.append('file', file)
+  return api.post('/preview/upload', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    timeout: 120000,
+  }).then(r => r.data)
+}
+
 export const getPreviewStatus = (cameraId: string): Promise<PreviewStatus> =>
   api.get(`/preview/status/${cameraId}`).then(r => r.data)
 
@@ -291,3 +329,37 @@ export const getPreviewManifest = (manifestUrl: string): Promise<PreviewManifest
   api.get(manifestUrl).then(r => r.data)
 
 export const previewAssetUrl = (path: string) => `${BASE_URL}${path}`
+
+// ── Users & Audit Log (admin only) ──────────────────────────────────────
+
+export interface AppUser {
+  id: number
+  username: string
+  role: 'admin' | 'investigator' | 'viewer'
+  full_name?: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export const getUsers = (): Promise<AppUser[]> =>
+  api.get('/auth/users').then(r => r.data)
+
+export const createUser = (
+  data: { username: string; password: string; role: string; full_name?: string }
+): Promise<AppUser> =>
+  api.post('/auth/users', data).then(r => r.data)
+
+export const updateUser = (id: number, data: { role?: string; is_active?: boolean }): Promise<AppUser> =>
+  api.patch(`/auth/users/${id}`, data).then(r => r.data)
+
+export interface AuditLogEntry {
+  id: number
+  username: string
+  action: string
+  target?: string | null
+  details?: string | null
+  timestamp: string
+}
+
+export const getAuditLog = (params?: { username?: string; action?: string; limit?: number; offset?: number }): Promise<AuditLogEntry[]> =>
+  api.get('/audit-log', { params }).then(r => r.data)

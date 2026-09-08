@@ -15,8 +15,11 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from auth.audit import log_action
+from auth.dependencies import require_role
+from auth.security import decode_access_token
 from db.base import get_db, AsyncSessionLocal
-from db.models import Alert, Camera
+from db.models import Alert, Camera, User
 from api.alert_manager import alert_manager
 
 logger = logging.getLogger(__name__)
@@ -43,16 +46,26 @@ _DEMO_MESSAGES = {
 
 
 @router.websocket("/alerts")
-async def alerts_websocket(websocket: WebSocket):
+async def alerts_websocket(websocket: WebSocket, token: str | None = Query(None)):
     """
     WebSocket endpoint for live alert streaming.
-    Connect at: ws://localhost:8000/alerts
+    Connect at: ws://localhost:8000/alerts?token=<JWT>
     Every new blacklist hit or anomaly is pushed as JSON to all connected clients.
+
+    Browsers' native WebSocket API can't set an Authorization header, so the
+    token travels as a query param instead — same JWT, just a different
+    transport. Rejected before accept() if missing/invalid, matching the
+    same "must be logged in" floor as every REST read.
 
     Keep-alive: server sends a {type: "ping"} frame every 30 s so the connection
     never idles long enough to be killed by the kernel's TCP idle timeout
     (~120 s on Linux). If the client is gone, WebSocketDisconnect fires cleanly.
     """
+    payload = decode_access_token(token) if token else None
+    if payload is None:
+        await websocket.close(code=4401, reason="Unauthorized")
+        return
+
     await alert_manager.connect(websocket)
     await websocket.send_json({
         "type": "connected",
@@ -97,6 +110,7 @@ async def list_alerts(
     plate_number: str | None = Query(None),
     limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
+    _user: User = Depends(require_role("viewer")),
 ):
     """List historical alerts with optional filters."""
     query = select(Alert, Camera).join(Camera, Alert.camera_id == Camera.id)
@@ -134,6 +148,7 @@ async def list_alerts(
 async def resolve_alert(
     alert_id: int,
     db: AsyncSession = Depends(get_db),
+    user: User = Depends(require_role("investigator")),
 ):
     """Mark an alert as resolved."""
     alert = await db.get(Alert, alert_id)
@@ -141,6 +156,7 @@ async def resolve_alert(
         from fastapi import HTTPException
         raise HTTPException(status_code=404, detail="Alert not found")
     alert.resolved = True
+    await log_action(db, user, "alert_resolve", target=alert.plate_number, details=f"alert_id={alert_id}")
     await db.commit()
 
     # Notify WebSocket clients
@@ -159,6 +175,7 @@ async def simulate_alert(
     alert_type: str = Query("blacklist_hit", pattern="^(blacklist_hit|anomaly)$"),
     plate_number: str | None = Query(None),
     camera_id: str | None = Query(None),
+    user: User = Depends(require_role("investigator")),
 ):
     """
     Fire a synthetic alert for demo/recording purposes.
@@ -191,6 +208,7 @@ async def simulate_alert(
         source="simulated",
     )
     db.add(alert)
+    await log_action(db, user, "alert_simulate", target=plate, details=f"alert_type={alert_type}")
     await db.commit()
     await db.refresh(alert)
 

@@ -8,8 +8,11 @@ import {
   getIngestionStatusFor,
   type BlacklistEntry, type UploadResult,
 } from '../lib/api'
+import { useAuth, hasRole } from '../lib/auth'
 
 export default function BlacklistView() {
+  const { user } = useAuth()
+  const canEdit = hasRole(user, 'investigator')
   const [entries, setEntries] = useState<BlacklistEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [plate, setPlate] = useState('')
@@ -139,6 +142,11 @@ export default function BlacklistView() {
           {/* ── Add plate form ─────────────────────────────── */}
           <div className="glass-card p-5" id="blacklist-add-form">
             <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Add Plate to Blacklist</h2>
+            {!canEdit ? (
+              <div className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>
+                Your role ({user?.role}) is read-only here. Adding plates requires the investigator role.
+              </div>
+            ) : (
             <div className="flex flex-col gap-3">
               <input
                 id="blacklist-plate-input"
@@ -168,11 +176,18 @@ export default function BlacklistView() {
                 Add to Blacklist
               </button>
             </div>
+            )}
           </div>
 
           {/* ── Test upload ─────────────────────────────────── */}
           <div className="glass-card p-5" id="test-upload-panel">
             <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Test Detection Upload</h2>
+            {!canEdit ? (
+              <div className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>
+                Your role ({user?.role}) is read-only here. Running detection tests requires the investigator role.
+              </div>
+            ) : (
+            <>
             <div
               className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg cursor-pointer transition-colors"
               style={{ border: '1.5px dashed var(--border)', background: 'rgba(20,28,46,0.5)' }}
@@ -256,6 +271,8 @@ export default function BlacklistView() {
                 )}
               </div>
             )}
+            </>
+            )}
           </div>
         </div>
 
@@ -297,25 +314,31 @@ export default function BlacklistView() {
                       </Link>
                     </td>
                     <td className="px-5 py-3 flex items-center gap-2">
-                      <button
-                        id={`blacklist-simulate-${e.plate_number}`}
-                        className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
-                        onClick={() => handleSimulate(e.plate_number)}
-                        disabled={simulating === e.plate_number}
-                        title="Fires a clearly-labeled simulated alert — demo fallback, not a real detection"
-                      >
-                        {simulating === e.plate_number ? <RadarLoader size={11} /> : <Clapperboard size={11} />}
-                        Simulate sighting
-                      </button>
-                      <button
-                        id={`blacklist-remove-${e.plate_number}`}
-                        className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
-                        onClick={() => handleRemove(e.plate_number)}
-                        disabled={removing === e.plate_number}
-                      >
-                        {removing === e.plate_number ? <RadarLoader size={11} /> : <Trash2 size={11} />}
-                        Remove
-                      </button>
+                      {canEdit ? (
+                        <>
+                          <button
+                            id={`blacklist-simulate-${e.plate_number}`}
+                            className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                            onClick={() => handleSimulate(e.plate_number)}
+                            disabled={simulating === e.plate_number}
+                            title="Fires a clearly-labeled simulated alert — demo fallback, not a real detection"
+                          >
+                            {simulating === e.plate_number ? <RadarLoader size={11} /> : <Clapperboard size={11} />}
+                            Simulate sighting
+                          </button>
+                          <button
+                            id={`blacklist-remove-${e.plate_number}`}
+                            className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                            onClick={() => handleRemove(e.plate_number)}
+                            disabled={removing === e.plate_number}
+                          >
+                            {removing === e.plate_number ? <RadarLoader size={11} /> : <Trash2 size={11} />}
+                            Remove
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
