@@ -10,6 +10,7 @@ from sqlalchemy import (
     ForeignKey, Text, Index,
 )
 from sqlalchemy.orm import relationship
+from geoalchemy2 import Geometry  # Imported Geo Alchemy for more pin point accuracy
 
 from db.base import Base
 
@@ -26,8 +27,17 @@ class Camera(Base):
     lat = Column(Float, nullable=False)
     lng = Column(Float, nullable=False)
     road_segment = Column(String(200), nullable=True)
+    
+    # ── PostGIS Spatial Column ──
+    # SRID 4326 represents standard GPS latitude/longitude coordinates (WGS 84)
+    geom = Column(Geometry(geometry_type="POINT", srid=4326), nullable=True)
 
     events = relationship("PlateEvent", back_populates="camera", lazy="selectin")
+
+    __table_args__ = (
+        # GiST index for ultra-fast spatial searches (e.g., radius queries)
+        Index("idx_cameras_geom", "geom", postgresql_using="gist"),
+    )
 
 
 class PlateEvent(Base):
