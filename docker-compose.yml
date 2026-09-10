@@ -12,13 +12,14 @@ services:
       - "5432:5432"
     volumes:
       - pg_data:/var/lib/postgresql/data
+      # Maps our setup script to auto-run on first boot
+      - ./backend/db/init-scripts:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U nagarnetra" ]
+     # Dynamically uses the variables so it doesn't break if you change usernames
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-nagarnetra} -d $${POSTGRES_DB:-nagarnetra}" ]
       interval: 5s
       timeout: 5s
       retries: 10
-    profiles:
-      - postgres
 
   # ── FastAPI Backend ────────────────────────────────────────────────────────
   backend:
@@ -30,7 +31,7 @@ services:
     env_file:
       - .env
     environment:
-      - DB_MODE=${DB_MODE:-sqlite}
+      - DB_MODE=${DB_MODE:-postgres}  # Switched to Postgres
       - SQLITE_PATH=/app/data/nagarnetra.db
       - CAMERAS_JSON_PATH=/app/data/cameras.json
       - BLACKLIST_JSON_PATH=/app/data/blacklist.json
@@ -46,7 +47,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-        required: false
 
   # ── React Frontend ────────────────────────────────────────────────────────
   frontend:

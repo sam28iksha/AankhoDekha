@@ -1,6 +1,6 @@
 """
 NAGARNETRA — Database Engine & Session Management
-Supports both SQLite (dev/demo) and PostgreSQL+PostGIS (production).
+Configured for high-concurrency async ingestion via PostgreSQL.
 """
 from __future__ import annotations
 
@@ -9,19 +9,27 @@ from sqlalchemy.orm import DeclarativeBase
 
 from config import settings
 
-
 DATABASE_URL = settings.get_database_url()
 
-# Connection args differ by driver
-connect_args = {}
-if settings.DB_MODE == "sqlite":
-    connect_args = {"check_same_thread": False}
-
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    connect_args=connect_args,
-)
+# Dynamic engine configuration based on the environment
+if settings.DB_MODE == "postgres":
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        # ── Enterprise Pooling Parameters ──
+        pool_size=20,           # Base persistent connections for camera streams
+        max_overflow=10,        # Burst buffer for heavy API traffic
+        pool_timeout=30.0,      # Don't hang indefinitely if pool is full
+        pool_recycle=1800,      # Recycle connections every 30 mins to prevent drops
+        pool_pre_ping=True,     # Liveness check before using a connection
+    )
+else:
+    # Fallback for local SQLite testing
+    engine = create_async_engine(
+        DATABASE_URL,
+        echo=False,
+        connect_args={"check_same_thread": False},
+    )
 
 AsyncSessionLocal = async_sessionmaker(
     bind=engine,
@@ -31,20 +39,21 @@ AsyncSessionLocal = async_sessionmaker(
     autoflush=False,
 )
 
-
 class Base(DeclarativeBase):
     """Shared declarative base for all ORM models."""
     pass
 
-
 async def get_db() -> AsyncSession:
-    """FastAPI dependency — yields an async DB session."""
+    """
+    FastAPI dependency — yields an async DB session.
+    
+    TRANSACTION POLICY:
+    This dependency does NOT auto-commit. The caller (API endpoint or ingestion worker)
+    must explicitly call `await db.commit()` to persist changes. If an error occurs,
+    closing the session automatically discards uncommitted changes safely.
+    """
     async with AsyncSessionLocal() as session:
         try:
             yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
         finally:
             await session.close()

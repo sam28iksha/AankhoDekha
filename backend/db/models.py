@@ -1,4 +1,7 @@
-"""NAGARNETRA — ORM Models"""
+"""
+NAGARNETRA — ORM Models
+Production-ready schema optimized for high-concurrency ANPR ingestion and spatial queries.
+"""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -28,6 +31,10 @@ class Camera(Base):
 
 
 class PlateEvent(Base):
+    """
+    High-frequency event log for every ANPR camera detection.
+    Indexed heavily on plate_number, camera_id, and timestamp for sub-second trajectory lookups.
+    """
     __tablename__ = "plate_events"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -45,6 +52,10 @@ class PlateEvent(Base):
 
 
 class Blacklist(Base):
+    """
+    Independent reference table for blacklisted vehicles.
+    Decoupled from PlateEvent so officers can flag plates before cameras ever sight them.
+    """
     __tablename__ = "blacklist"
 
     plate_number = Column(String(20), primary_key=True)
@@ -62,8 +73,6 @@ class Alert(Base):
     alert_type = Column(String(50), nullable=False)  # "blacklist_hit" | "anomaly"
     resolved = Column(Boolean, nullable=False, default=False)
     details = Column(Text, nullable=True)
-    # "detection" — a real plate match/anomaly found during actual ingestion.
-    # "simulated" — fired on demand via POST /alerts/simulate for demo purposes.
     source = Column(String(20), nullable=False, default="detection")
 
 
@@ -84,10 +93,8 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    # Denormalized so the record stays meaningful even if the user account
-    # is later deleted — an audit trail must survive its actor being removed.
     username = Column(String(50), nullable=False)
     action = Column(String(50), nullable=False, index=True)
-    target = Column(String(200), nullable=True)  # e.g. the plate number involved
+    target = Column(String(200), nullable=True)
     details = Column(Text, nullable=True)
     timestamp = Column(DateTime(timezone=True), nullable=False, default=_utcnow, index=True)
