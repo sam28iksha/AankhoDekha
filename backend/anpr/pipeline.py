@@ -20,6 +20,8 @@ from config import settings
 from anpr.frame_source import FrameSource
 from anpr.detector import plate_detector, PlateDetection
 from anpr.ocr import plate_ocr
+from time import perf_counter
+from utils.metrics import metrics
 
 logger = logging.getLogger(__name__)
 
@@ -222,3 +224,94 @@ class ANPRPipeline:
             f"[{self.camera_id}] Pipeline complete: "
             f"{frame_count} frames processed, {event_count} events emitted."
         )
+
+
+    async def run(self) -> AsyncIterator[PlateEvent]:
+        frame_count = 0
+        event_count = 0
+        active_clusters: list[_PlateCluster] = []
+
+        async for frame in self.source:
+            pipeline_start = perf_counter()
+            metrics.increment("frames_processed")
+            metrics.mark_camera_active(self.camera_id)
+
+            frame_count += 1
+            frame_ts = self.video_start_time + timedelta(
+                milliseconds=frame.timestamp_ms
+            )
+
+            still_active = []
+            for cluster in active_clusters:
+                if (frame_ts - cluster.last_seen).total_seconds() > _CLUSTER_GAP_SECONDS:
+                    event_count += 1
+                    yield self._emit(cluster)
+                else:
+                    still_active.append(cluster)
+            active_clusters = still_active
+
+            # --- Protected YOLO Detection ---
+            loop = asyncio.get_running_loop()
+            async with _ML_SEMAPHORE:
+                det_start = perf_counter()
+                detections: list[PlateDetection] = await loop.run_in_executor(
+                    None, plate_detector.detect, frame.image
+                )
+                metrics.record_latency("detection", (perf_counter() - det_start) * 1000)
+                metrics.increment("plates_detected", len(detections))
+
+            for det in detections:
+                metrics.increment("ocr_attempts")
+                
+                # --- Protected PaddleOCR Read ---
+                async with _ML_SEMAPHORE:
+                    ocr_start = perf_counter()
+                    raw_plate_text, ocr_conf = await loop.run_in_executor(
+                        None, plate_ocr.read, det.crop
+                    )
+                    metrics.record_latency("ocr", (perf_counter() - ocr_start) * 1000)
+
+                # Apply Normalization immediately!
+                plate_text = _normalize_plate(raw_plate_text)
+
+                if not plate_text:
+                    continue
+                if ocr_conf < settings.OCR_CONFIDENCE_THRESHOLD:
+                    logger.debug(f"Low OCR conf {ocr_conf:.2f} for plate '{plate_text}', skipping.")
+                    continue
+
+                metrics.increment("ocr_success")
+                combined_conf = (det.confidence * ocr_conf) ** 0.5
+
+                snapshot_path = None
+                if self.save_snapshots:
+                    snapshot_path = await save_frame_snapshot(
+                        frame.image, self.camera_id, plate_text, frame_ts
+                    )
+
+                matched = None
+                for cluster in active_clusters:
+                    if _plate_similarity(plate_text, cluster.representative) >= _SIMILARITY_THRESHOLD:
+                        matched = cluster
+                        break
+
+                if matched:
+                    matched.add(plate_text, combined_conf, frame_ts, snapshot_path)
+                else:
+                    active_clusters.append(
+                        _PlateCluster(plate_text, combined_conf, frame_ts, snapshot_path)
+                    )
+
+            # Record total pipeline latency for this frame (YOLO + OCR + Clustering)
+            metrics.record_latency("pipeline", (perf_counter() - pipeline_start) * 1000)
+
+        for cluster in active_clusters:
+            event_count += 1
+            yield self._emit(cluster)
+
+        logger.info(
+            f"[{self.camera_id}] Pipeline complete: "
+            f"{frame_count} frames processed, {event_count} events emitted."
+        )
+
+        

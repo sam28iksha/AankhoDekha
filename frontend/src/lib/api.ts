@@ -363,3 +363,17 @@ export interface AuditLogEntry {
 
 export const getAuditLog = (params?: { username?: string; action?: string; limit?: number; offset?: number }): Promise<AuditLogEntry[]> =>
   api.get('/audit-log', { params }).then(r => r.data)
+
+// frontend/src/lib/api.ts (or your existing API helper file)
+export async function fetchSystemMetrics() {
+  const token = localStorage.getItem("token"); // Adjust based on your auth key
+  const response = await fetch("http://localhost:8000/health/metrics", {
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "accept": "application/json"
+    }
+  });
+  
+  if (!response.ok) throw new Error("Failed to fetch system metrics");
+  return response.json();
+}

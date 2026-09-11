@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Film, Play, Pause, CheckCircle2, AlertTriangle, ScanLine, UploadCloud } from 'lucide-react'
 import RadarLoader from '../components/RadarLoader'
+import { SystemHealthWidget } from '../components/SystemHealthWidget'
 import {
   getCameras, startPreview, uploadPreviewVideo, getPreviewStatus, getPreviewManifest, previewAssetUrl,
   type Camera, type PreviewStatus, type PreviewManifest,
@@ -37,9 +38,6 @@ export default function OCRPreview() {
     setFrameIndex(0)
   }, [])
 
-  // Shared by both the camera-dropdown flow and the upload flow — once a
-  // preview job is started under some ID (a real camera_id or a generated
-  // upload_xxx id), polling/loading the result works identically either way.
   const pollPreview = useCallback((id: string) => {
     stopPolling()
     pollRef.current = setInterval(async () => {
@@ -118,11 +116,11 @@ export default function OCRPreview() {
         <div>
           <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
             <ScanLine size={18} style={{ color: 'var(--accent-blue-light)' }} />
-            OCR Preview
+            OCR Preview & Live Telemetry
           </h1>
           <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
             Watch the ANPR pipeline detect and read plates frame-by-frame — the same detector, OCR model,
-            and format validation that runs in production, visualized.
+            and format validation that runs in production, visualized alongside live system metrics.
           </p>
         </div>
 
@@ -203,9 +201,9 @@ export default function OCRPreview() {
         )}
 
         {manifest && (
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Frame player */}
-            <div className="col-span-2 glass-card p-4">
+            <div className="lg:col-span-2 glass-card p-4">
               {activeLabel && (
                 <div className="text-xs mb-2" style={{ color: 'var(--text-muted)' }}>
                   Now showing: <span style={{ color: 'var(--text-secondary)' }}>{activeLabel}</span>
@@ -255,29 +253,44 @@ export default function OCRPreview() {
               )}
             </div>
 
-            {/* Recognized plates sidebar */}
-            <div className="glass-card p-4 flex flex-col">
-              <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-                Recognized Plates ({manifest.plates.length})
+            {/* Right Sidebar: Recognized plates + Popped-out Live Telemetry */}
+            <div className="flex flex-col gap-6">
+              <div className="glass-card p-4 flex flex-col flex-1 min-h-[220px]">
+                <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+                  Recognized Plates ({manifest.plates.length})
+                </div>
+                <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0">
+                  {manifest.plates.length === 0 ? (
+                    <div className="text-xs" style={{ color: 'var(--text-muted)' }}>No plate cleared format validation in this clip.</div>
+                  ) : (
+                    manifest.plates.map((p, i) => (
+                      <button
+                        key={i}
+                        onClick={() => jumpToTime(p.t)}
+                        className="flex items-center justify-between p-2 rounded text-left transition-colors hover:bg-white/5"
+                        style={{ border: '1px solid var(--border)', background: 'rgba(20,28,46,0.5)' }}
+                      >
+                        <span className="plate-badge" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{p.plate}</span>
+                        <span className="text-xs flex items-center gap-1" style={{ color: 'var(--accent-green)' }}>
+                          <CheckCircle2 size={11} /> {(p.confidence * 100).toFixed(0)}%
+                        </span>
+                      </button>
+                    ))
+                  )}
+                </div>
               </div>
-              <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0">
-                {manifest.plates.length === 0 ? (
-                  <div className="text-xs" style={{ color: 'var(--text-muted)' }}>No plate cleared format validation in this clip.</div>
-                ) : (
-                  manifest.plates.map((p, i) => (
-                    <button
-                      key={i}
-                      onClick={() => jumpToTime(p.t)}
-                      className="flex items-center justify-between p-2 rounded text-left transition-colors hover:bg-white/5"
-                      style={{ border: '1px solid var(--border)', background: 'rgba(20,28,46,0.5)' }}
-                    >
-                      <span className="plate-badge" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{p.plate}</span>
-                      <span className="text-xs flex items-center gap-1" style={{ color: 'var(--accent-green)' }}>
-                        <CheckCircle2 size={11} /> {(p.confidence * 100).toFixed(0)}%
-                      </span>
-                    </button>
-                  ))
-                )}
+
+              {/* Popped-out Prominent Telemetry Widget for Live Demo Observation */}
+              <div className="glass-card p-4 border border-blue-500/30 bg-blue-950/10 shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-blue-400">
+                    ⚡ Live Execution Telemetry
+                  </span>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono">
+                    SYNCED
+                  </span>
+                </div>
+                <SystemHealthWidget />
               </div>
             </div>
           </div>

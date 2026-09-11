@@ -17,6 +17,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import time
 import uuid
 from pathlib import Path
 
@@ -29,6 +30,7 @@ from db.models import User
 from anpr.detector import plate_detector
 from anpr.ocr import plate_ocr
 from anpr.pipeline import _PlateCluster, _plate_similarity, _CLUSTER_GAP_SECONDS
+from utils.metrics import metrics
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/preview", tags=["preview"])
@@ -79,6 +81,7 @@ async def _render_preview(camera_id: str, video_path: str) -> None:
         saved_idx = 0
 
         while True:
+            t_pipeline_start = time.perf_counter()
             ret, frame = await loop.run_in_executor(None, cap.read)
             if not ret:
                 break
@@ -87,14 +90,32 @@ async def _render_preview(camera_id: str, video_path: str) -> None:
                 continue
 
             t_seconds = frame_idx / fps
+            
+            t_det_start = time.perf_counter()
             detections = await loop.run_in_executor(None, plate_detector.detect, frame)
+            det_ms = (time.perf_counter() - t_det_start) * 1000
 
             boxes_for_frame = []
+            total_ocr_ms = 0.0
+            ocr_count = 0
+
             for det in detections:
+                t_ocr_start = time.perf_counter()
                 plate_text, ocr_conf = await loop.run_in_executor(None, plate_ocr.read, det.crop)
+                ocr_ms = (time.perf_counter() - t_ocr_start) * 1000
+                total_ocr_ms += ocr_ms
+                ocr_count += 1
+
                 boxes_for_frame.append((det.x1, det.y1, det.x2, det.y2, plate_text, ocr_conf))
 
-                if plate_text and ocr_conf >= settings.OCR_CONFIDENCE_THRESHOLD:
+                # Track individual OCR success for live observability
+                is_success = bool(plate_text and ocr_conf >= settings.OCR_CONFIDENCE_THRESHOLD)
+                
+                metrics.increment("ocr_attempts", 1)
+                if is_success:
+                    metrics.increment("ocr_success", 1)
+                    metrics.increment("plates_detected", 1)
+                    
                     combined_conf = (det.confidence * ocr_conf) ** 0.5
                     matched = None
                     for cluster in active_clusters:
@@ -117,6 +138,17 @@ async def _render_preview(camera_id: str, video_path: str) -> None:
             active_clusters = still_active
 
             _draw_detections(frame, boxes_for_frame)
+
+            t_pipeline_end = time.perf_counter()
+            pipeline_ms = (t_pipeline_end - t_pipeline_start) * 1000
+            avg_ocr_ms = (total_ocr_ms / ocr_count) if ocr_count > 0 else 0.0
+
+            # Feed the metrics registry using your defined registry methods
+            metrics.increment("frames_processed", 1)
+            metrics.mark_camera_active(camera_id)
+            metrics.record_latency("detection", det_ms)
+            metrics.record_latency("ocr", avg_ocr_ms)
+            metrics.record_latency("pipeline", pipeline_ms)
 
             saved_idx += 1
             filename = f"frame_{saved_idx:05d}.jpg"
@@ -169,10 +201,6 @@ async def start_preview_upload(
     _render_preview pipeline as the camera-based flow, keyed by a
     generated ID instead of a camera_id, so the frontend polls/loads it
     identically either way.
-
-    Registered BEFORE POST /{camera_id} — route order matters here, since
-    that path parameter would otherwise swallow "/preview/upload" as if
-    camera_id="upload".
     """
     ext = Path(file.filename or "").suffix.lower()
     if ext not in _VIDEO_EXTS:

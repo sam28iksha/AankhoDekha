@@ -17,11 +17,9 @@ from analytics._time import data_now
 async def get_density(
     db: AsyncSession,
     hours: int = 24,
-    bucket_minutes: int = 60,
 ) -> List[Dict[str, Any]]:
     """
-    Return event counts per camera over the last `hours` hours,
-    bucketed into `bucket_minutes`-minute windows.
+    Return event counts per camera over the last `hours` hours.
     """
     since = await data_now(db) - timedelta(hours=hours)
 
@@ -63,9 +61,10 @@ async def get_citywide_timeseries(
     """
     since = await data_now(db) - timedelta(hours=hours)
 
+    # PostgreSQL-compatible time truncation
     result = await db.execute(
         select(
-            func.strftime("%Y-%m-%dT%H:00:00", PlateEvent.timestamp).label("hour"),
+            func.date_trunc('hour', PlateEvent.timestamp).label("hour"),
             func.count(PlateEvent.id).label("count"),
         )
         .where(PlateEvent.timestamp >= since)
@@ -73,7 +72,9 @@ async def get_citywide_timeseries(
         .order_by(text("hour"))
     )
     rows = result.fetchall()
-    return [{"hour": row.hour, "count": row.count} for row in rows]
+    
+    # Format the PostgreSQL datetime object into the expected ISO string for the frontend
+    return [{"hour": row.hour.isoformat() if hasattr(row.hour, 'isoformat') else row.hour, "count": row.count} for row in rows]
 
 
 async def get_density_timeseries(
@@ -87,10 +88,10 @@ async def get_density_timeseries(
     """
     since = await data_now(db) - timedelta(hours=hours)
 
-    # SQLite-compatible: use strftime for bucketing
+    # PostgreSQL-compatible time truncation
     result = await db.execute(
         select(
-            func.strftime("%Y-%m-%dT%H:00:00", PlateEvent.timestamp).label("hour"),
+            func.date_trunc('hour', PlateEvent.timestamp).label("hour"),
             func.count(PlateEvent.id).label("count"),
         )
         .where(
@@ -101,4 +102,4 @@ async def get_density_timeseries(
         .order_by(text("hour"))
     )
     rows = result.fetchall()
-    return [{"hour": row.hour, "count": row.count} for row in rows]
+    return [{"hour": row.hour.isoformat() if hasattr(row.hour, 'isoformat') else row.hour, "count": row.count} for row in rows]

@@ -28,6 +28,8 @@ from anpr.detector import plate_detector
 from anpr.ocr import plate_ocr
 from api.alert_manager import alert_manager
 from api.anomaly import check_speed_anomaly
+from time import perf_counter
+from utils.metrics import metrics
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ingest", tags=["ingestion"])
@@ -335,3 +337,76 @@ async def get_ingestion_status(camera_id: str, _user: User = Depends(require_rol
 async def get_all_ingestion_status(_user: User = Depends(require_role("viewer"))):
     """Get ingestion status for all cameras."""
     return _ingestion_status
+
+
+async def _write_event_and_maybe_alert(
+    db: AsyncSession,
+    cam: Camera,
+    plate_event: PipelinePlateEvent,
+) -> dict:
+    """
+    Persist a single detected plate event, check it against the blacklist, and
+    broadcast a live WebSocket alert if it's a hit.
+    """
+    db_t0 = perf_counter()
+    
+    db_event = PlateEvent(
+        plate_number=plate_event.plate_number,
+        camera_id=plate_event.camera_id,
+        timestamp=plate_event.timestamp,
+        confidence=plate_event.confidence,
+        frame_snapshot_path=plate_event.frame_snapshot_path,
+    )
+    db.add(db_event)
+    await db.flush()  # get event ID
+
+    bl_entry = await db.get(Blacklist, plate_event.plate_number)
+    is_blacklisted = bl_entry is not None
+    if bl_entry:
+        alert = Alert(
+            plate_number=plate_event.plate_number,
+            camera_id=plate_event.camera_id,
+            timestamp=plate_event.timestamp,
+            alert_type="blacklist_hit",
+            resolved=False,
+            details=f"Blacklisted: {bl_entry.reason}",
+            source="detection",
+        )
+        db.add(alert)
+        await db.flush()
+
+        await alert_manager.broadcast_alert(
+            alert_id=alert.id,
+            plate_number=plate_event.plate_number,
+            camera_id=plate_event.camera_id,
+            camera_name=cam.name,
+            alert_type="blacklist_hit",
+            timestamp=plate_event.timestamp,
+            details=f"Blacklisted plate detected at {cam.name}. Reason: {bl_entry.reason}",
+            source="detection",
+        )
+        metrics.increment("alerts_broadcast")
+        logger.warning(f"🚨 BLACKLIST HIT: {plate_event.plate_number} at {cam.name}")
+
+    await check_speed_anomaly(
+        db,
+        plate_number=plate_event.plate_number,
+        camera_id=plate_event.camera_id,
+        camera_name=cam.name,
+        camera_lat=cam.lat,
+        camera_lng=cam.lng,
+        timestamp=plate_event.timestamp,
+    )
+
+    await db.commit()
+    
+    metrics.record_latency("db_persistence", (perf_counter() - db_t0) * 1000)
+    metrics.increment("events_persisted")
+
+    return {
+        "event_id": db_event.id,
+        "plate_number": plate_event.plate_number,
+        "confidence": plate_event.confidence,
+        "blacklisted": is_blacklisted,
+        "reason": bl_entry.reason if bl_entry else None,
+    }
