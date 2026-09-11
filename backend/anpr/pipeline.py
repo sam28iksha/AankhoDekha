@@ -7,22 +7,25 @@ from __future__ import annotations
 import asyncio
 import difflib
 import logging
-import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import AsyncIterator, Callable, Optional
+from typing import AsyncIterator, Optional
 
 import cv2
 import numpy as np
 
 from config import settings
-from anpr.frame_source import FrameSource, Frame
+from anpr.frame_source import FrameSource
 from anpr.detector import plate_detector, PlateDetection
 from anpr.ocr import plate_ocr
 
 logger = logging.getLogger(__name__)
 
+# --- UPGRADE 2: Concurrency Control ---
+# Limits max concurrent ML tasks so YOLO/OCR don't crash the FastAPI thread pool.
+_ML_SEMAPHORE = asyncio.Semaphore(4) 
 
 @dataclass
 class PlateEvent:
@@ -55,23 +58,19 @@ async def save_frame_snapshot(
         logger.warning(f"Could not save snapshot: {e}")
         return None
 
+# --- UPGRADE 1: Plate Normalization ---
+def _normalize_plate(text: str) -> str:
+    """Strip all non-alphanumeric characters and force uppercase."""
+    if not text:
+        return ""
+    # Remove everything except A-Z and 0-9
+    return re.sub(r'[^A-Z0-9]', '', text.upper())
 
-# ── Temporal plate clustering ────────────────────────────────────────────────
-# A single physical vehicle crossing a camera's field of view gets sampled
-# across several consecutive frames, and OCR is noisy frame-to-frame (a single
-# flipped character — e.g. "MH10Z0499" vs "MH1OZ0499" — is the common case,
-# not the exception). Emitting one PlateEvent per raw OCR read turns one real
-# sighting into several "different" plates, which both inflates event counts
-# and breaks cross-camera trajectory matching (which relies on exact string
-# equality). Instead, reads that are close in time AND text-similar are
-# buffered into a cluster and collapsed into a single canonical reading via
-# confidence-weighted, per-character majority vote once the vehicle leaves
-# frame (no similar read for _CLUSTER_GAP_SECONDS).
+
 _CLUSTER_GAP_SECONDS = 3.0
-_SIMILARITY_THRESHOLD = 0.72  # difflib ratio; tolerant of 1-2 character OCR flips
+_SIMILARITY_THRESHOLD = 0.72  
 
-_PlateRead = tuple  # (plate_text, confidence, timestamp, snapshot_path)
-
+_PlateRead = tuple  
 
 def _plate_similarity(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, a, b).ratio()
@@ -86,8 +85,6 @@ class _PlateCluster:
 
     @property
     def representative(self) -> str:
-        # Matching anchors on the most recent read so a cluster can "drift"
-        # across several frames of an improving/degrading OCR read.
         return self.reads[-1][0]
 
     def add(self, plate: str, confidence: float, ts: datetime, snapshot_path: Optional[str]) -> None:
@@ -95,13 +92,6 @@ class _PlateCluster:
         self.last_seen = ts
 
     def resolve(self) -> tuple[str, float, datetime, Optional[str]]:
-        """
-        Confidence-weighted majority vote across all reads in the cluster.
-        Canonical length = the length with the highest total confidence weight;
-        each character position within that length is then the highest-weighted
-        character across contributing reads. Falls back cleanly to the single
-        read's text when the cluster has only one member.
-        """
         if len(self.reads) == 1:
             plate, conf, ts, snap = self.reads[0]
             return plate, conf, ts, snap
@@ -123,22 +113,11 @@ class _PlateCluster:
         best_read = max(self.reads, key=lambda r: r[1])
         best_conf = best_read[1]
         best_snapshot = best_read[3]
-        first_ts = self.reads[0][2]  # when the vehicle first entered frame
+        first_ts = self.reads[0][2]  
         return canonical_plate, best_conf, first_ts, best_snapshot
-# ──────────────────────────────────────────────────────────────────────────────
 
 
 class ANPRPipeline:
-    """
-    Processes a FrameSource end-to-end and yields PlateEvent objects.
-    Designed to be source-agnostic: pass any FrameSource subclass.
-
-    Usage
-    -----
-    async for event in ANPRPipeline(source, camera).run():
-        await write_to_db(event)
-    """
-
     def __init__(
         self,
         source: FrameSource,
@@ -178,13 +157,10 @@ class ANPRPipeline:
 
         async for frame in self.source:
             frame_count += 1
-            # Compute real timestamp for this frame
             frame_ts = self.video_start_time + timedelta(
                 milliseconds=frame.timestamp_ms
             )
 
-            # Close out clusters the vehicle has clearly left (no matching
-            # read for a while) before considering this frame's detections.
             still_active = []
             for cluster in active_clusters:
                 if (frame_ts - cluster.last_seen).total_seconds() > _CLUSTER_GAP_SECONDS:
@@ -194,17 +170,22 @@ class ANPRPipeline:
                     still_active.append(cluster)
             active_clusters = still_active
 
-            # --- Detection ---
+            # --- Protected YOLO Detection ---
             loop = asyncio.get_running_loop()
-            detections: list[PlateDetection] = await loop.run_in_executor(
-                None, plate_detector.detect, frame.image
-            )
+            async with _ML_SEMAPHORE:
+                detections: list[PlateDetection] = await loop.run_in_executor(
+                    None, plate_detector.detect, frame.image
+                )
 
             for det in detections:
-                # --- OCR ---
-                plate_text, ocr_conf = await loop.run_in_executor(
-                    None, plate_ocr.read, det.crop
-                )
+                # --- Protected PaddleOCR Read ---
+                async with _ML_SEMAPHORE:
+                    raw_plate_text, ocr_conf = await loop.run_in_executor(
+                        None, plate_ocr.read, det.crop
+                    )
+
+                # Apply Normalization immediately!
+                plate_text = _normalize_plate(raw_plate_text)
 
                 if not plate_text:
                     continue
@@ -212,10 +193,8 @@ class ANPRPipeline:
                     logger.debug(f"Low OCR conf {ocr_conf:.2f} for plate '{plate_text}', skipping.")
                     continue
 
-                # Combined confidence (geometric mean of YOLO + OCR)
                 combined_conf = (det.confidence * ocr_conf) ** 0.5
 
-                # Optional snapshot
                 snapshot_path = None
                 if self.save_snapshots:
                     snapshot_path = await save_frame_snapshot(
@@ -235,7 +214,6 @@ class ANPRPipeline:
                         _PlateCluster(plate_text, combined_conf, frame_ts, snapshot_path)
                     )
 
-        # Video ended — flush every cluster still open.
         for cluster in active_clusters:
             event_count += 1
             yield self._emit(cluster)
