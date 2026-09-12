@@ -1,9 +1,26 @@
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, CircleMarker, Popup, Polyline, Marker, useMap } from 'react-leaflet'
+import { MapContainer, CircleMarker, Popup, Polyline, Marker, useMap } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 // leaflet.heat patches L.heatLayer onto the Leaflet namespace
 import 'leaflet.heat'
+// @maplibre/maplibre-gl-leaflet patches L.maplibreGL() onto the Leaflet namespace —
+// used instead of <TileLayer> so the basemap renders from MapTiler's vector style
+// (free tier) rather than server-rendered raster tiles (custom styles require a
+// paid MapTiler plan to render as raster PNGs).
+import 'maplibre-gl/dist/maplibre-gl.css'
+import '@maplibre/maplibre-gl-leaflet'
+import * as maplibregl from 'maplibre-gl'
+// Vite doesn't recognize maplibre-gl's internal `new Worker(new URL(...))` call,
+// so its worker script silently fails to bundle (the plain `?url` variant also
+// fails — the worker imports a sibling chunk, maplibre-gl-shared.mjs, that a bare
+// `?url` copy omits). Without the worker, MapLibre can only paint the style's flat
+// "Background" layer — no vector data (roads/land/water) ever loads, since that
+// parsing normally happens inside the worker. `?worker&url` routes it through
+// Vite's worker pipeline instead, which bundles the worker as a self-contained
+// chunk; must be set before any map is constructed.
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url'
+maplibregl.setWorkerUrl(maplibreWorkerUrl)
 import { getCameras, getDensity, getLegRoute, type Camera, type CongestionEntry, type TrajectoryLeg, type LegRoute } from '../lib/api'
 import { useCachedFetch } from '../lib/cache'
 
@@ -80,6 +97,25 @@ const DEFAULT_HEATMAP_OPTIONS: Required<HeatmapOptions> = {
     0.8: '#f46d43',
     1.0: '#d73027',
   },
+}
+
+// ── India-compliant basemap via MapTiler's custom style ──────────────────────
+// Same imperative useMap() pattern as HeatmapLayer above: MapLibre GL renders
+// the vector style (which draws J&K/Ladakh per India's official depiction,
+// configured in MapTiler's Map Designer) directly onto a canvas layer added
+// to the Leaflet map — <TileLayer> can't be used here since that only knows
+// how to fetch pre-rendered raster tile images, not vector styles.
+function MapTilerVectorLayer({ styleUrl }: { styleUrl: string }) {
+  const map = useMap()
+
+  useEffect(() => {
+    const layer = L.maplibreGL({ style: styleUrl }).addTo(map)
+    return () => {
+      map.removeLayer(layer)
+    }
+  }, [map, styleUrl])
+
+  return null
 }
 
 function HeatmapLayer({ points, options }: { points: [number, number, number][]; options?: HeatmapOptions }) {
@@ -260,10 +296,8 @@ export default function MapView({
       zoomControl={true}
       className={lightBasemap ? 'map-light-theme' : undefined}
     >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
-        maxZoom={19}
+      <MapTilerVectorLayer
+        styleUrl={`https://api.maptiler.com/maps/${import.meta.env.VITE_MAPTILER_STYLE_ID || '01a09471-e40d-74ac-b437-32d34209fd25'}/style.json?key=${import.meta.env.VITE_MAPTILER_KEY || 'KXVlZpvSDsmbvczfF0aU'}`}
       />
 
       {/* Smooth traffic-density heatmap overlay */}
