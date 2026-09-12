@@ -201,6 +201,11 @@ class PlateOCR:
             lang="en",
             show_log=False,
             use_gpu=False,
+            # Unpinned, PaddleOCR's native math backend (MKL/OpenBLAS) spawns its
+            # own thread pool per call, which races against the ThreadPoolExecutor
+            # this is invoked from (see preview.py, pipeline.py) and segfaults
+            # under concurrent/repeated calls. Pin to 1 to avoid the conflict.
+            cpu_threads=1,
         )
         logger.info("PaddleOCR reader ready.")
 
