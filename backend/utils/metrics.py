@@ -28,6 +28,7 @@ class MetricsRegistry:
         # Latency Tracking (count, total_ms)
         self._latencies: Dict[str, Dict[str, float]] = {
             "detection": {"count": 0, "total_ms": 0.0},
+            "vehicle_detection": {"count": 0, "total_ms": 0.0},
             "ocr": {"count": 0, "total_ms": 0.0},
             "event_persistence": {"count": 0, "total_ms": 0.0},
             "pipeline": {"count": 0, "total_ms": 0.0},

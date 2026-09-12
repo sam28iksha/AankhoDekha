@@ -49,14 +49,21 @@ export interface Camera {
 
 export interface PlateEvent {
   event_id: number
+  plate_number: string
+  vehicle_id?: string | null
+
   camera_id: string
   camera_name: string
   lat: number
   lng: number
   road_segment?: string
+
   timestamp: string
   confidence: number
   snapshot_path?: string
+
+  vehicle_type: string
+  color: string
 }
 
 export interface LegRoute {
@@ -81,9 +88,29 @@ export interface TrajectoryLeg {
 
 export interface VehicleHistory {
   plate_number: string
+  vehicle_ids: string[]
+
   total_sightings: number
   blacklisted: boolean
-  blacklist_info?: { reason: string; added_at: string }
+  blacklist_info?: {
+    reason: string
+    added_at: string
+  }
+
+  first_seen?: string
+  last_seen?: string
+
+  cameras_visited: string[]
+  sightings: PlateEvent[]
+  trajectory: [number, number][]
+  legs: TrajectoryLeg[]
+}
+export interface VehicleEntityHistory {
+  vehicle_id: string
+  plates_observed: string[]
+  vehicle_type?: string
+  color?: string
+  total_sightings: number
   first_seen?: string
   last_seen?: string
   cameras_visited: string[]
@@ -218,6 +245,11 @@ export const getLegRoute = (
 export const getVehicleHistory = (plate: string): Promise<VehicleHistory> =>
   api.get(`/vehicle/${encodeURIComponent(plate)}/history`).then(r => r.data)
 
+export const getVehicleEntityHistory = (
+  vehicleId: string
+): Promise<VehicleEntityHistory> =>
+  api.get(`/vehicle/entity/${encodeURIComponent(vehicleId)}`).then(r => r.data)
+  
 export const getBlacklistStatus = (plate: string) =>
   api.get(`/vehicle/${encodeURIComponent(plate)}/blacklist-status`).then(r => r.data)
 
