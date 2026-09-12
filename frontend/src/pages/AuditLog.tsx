@@ -43,12 +43,13 @@ export default function AuditLog() {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+            <div className="page-kicker">ADMIN ONLY</div>
+            <h1 className="page-title flex items-center gap-2">
               <ClipboardList size={18} style={{ color: 'var(--accent-blue-light)' }} />
               Audit Log
             </h1>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-              Admin only. Every vehicle search, blacklist change, and alert action — who, what, when.
+            <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+              Every vehicle search, blacklist change, and alert action — who, what, when.
             </p>
           </div>
           <div className="flex items-center gap-2">

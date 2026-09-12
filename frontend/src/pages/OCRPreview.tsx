@@ -116,11 +116,12 @@ export default function OCRPreview() {
     <div className="h-full overflow-y-auto p-6" style={{ background: 'var(--bg-primary)' }}>
       <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <div className="page-kicker">ANPR PIPELINE</div>
+          <h1 className="page-title flex items-center gap-2">
             <ScanLine size={18} style={{ color: 'var(--accent-blue-light)' }} />
             OCR Preview
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
             Watch the ANPR pipeline detect and read plates frame-by-frame — the same detector, OCR model,
             and format validation that runs in production, visualized.
           </p>

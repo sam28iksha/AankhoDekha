@@ -100,7 +100,7 @@ export default function AlertsView() {
       >
         <div className="flex items-center gap-3 flex-1">
           <Bell size={18} style={{ color: 'var(--accent-blue-light)' }} />
-          <h1 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>Alerts Center</h1>
+          <h1 className="page-title-sm">Alerts Center</h1>
           {unresolvedCount > 0 && (
             <span
               className="px-2 py-0.5 rounded-full text-xs font-bold alert-pulse"

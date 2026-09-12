@@ -61,12 +61,13 @@ export default function UserManagement() {
     <div className="h-full overflow-y-auto p-6" style={{ background: 'var(--bg-primary)' }}>
       <div className="max-w-4xl mx-auto space-y-6">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <div className="page-kicker">ADMIN ONLY</div>
+          <h1 className="page-title flex items-center gap-2">
             <UserCog size={18} style={{ color: 'var(--accent-blue-light)' }} />
             User Management
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
-            Admin only. Accounts are provisioned here — there is no self-registration.
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+            Accounts are provisioned here — there is no self-registration.
           </p>
         </div>
 

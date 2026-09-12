@@ -64,8 +64,9 @@ export default function Analytics() {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Traffic Analytics</h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>City-wide patterns · Last 24 hours</p>
+          <div className="page-kicker">CITYWIDE INTELLIGENCE</div>
+          <h1 className="page-title">Traffic Analytics</h1>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>City-wide patterns · Last 24 hours</p>
         </div>
 
         {/* ── Hero stat cards ───────────────────────────────── */}

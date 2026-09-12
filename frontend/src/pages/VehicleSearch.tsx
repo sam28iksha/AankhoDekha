@@ -1,69 +1,101 @@
-import { useState, useCallback } from 'react'
-import { Search, AlertTriangle, Clock, Navigation, Gauge, Route, GitCommitHorizontal } from 'lucide-react'
-import MapView from '../components/MapView'
+import { useState, useCallback, useEffect, useRef } from 'react'
+import {
+  Search, AlertTriangle, Navigation, Gauge, Route, GitCommitHorizontal, Radar,
+  Crosshair, X, ShieldAlert, Eye, Play, Pause, Car, ArrowRight,
+} from 'lucide-react'
+import MapView, { type LegStatus, LEG_STATUS_COLOR } from '../components/MapView'
 import RadarLoader from '../components/RadarLoader'
-import { getVehicleHistory, type VehicleHistory, type PlateEvent, type TrajectoryLeg } from '../lib/api'
-import { formatDistanceToNow, format } from 'date-fns'
+import type { SimStats, SelectedVehicleInfo } from '../components/TrafficSimulation'
+import {
+  getVehicleHistory, searchPlates, getTopPlates, getBlacklist, getAlerts, type VehicleHistory, type PlateEvent,
+  type TrajectoryLeg, type PlateSearchResult, type AlertEntry,
+} from '../lib/api'
+import { format } from 'date-fns'
 
+const VEHICLE_KIND_LABEL: Record<SelectedVehicleInfo['kind'], string> = {
+  normal: 'Normal traffic',
+  blacklisted: 'Blacklisted vehicle',
+  suspicious: 'Suspicious pattern',
+}
+const VEHICLE_KIND_COLOR: Record<SelectedVehicleInfo['kind'], string> = {
+  normal: 'var(--accent-blue-light)',
+  blacklisted: 'var(--accent-red)',
+  suspicious: 'var(--accent-amber)',
+}
+
+// A real alert is matched to the sighting at the same camera within this
+// window — alerts fire at (or a few seconds after) the detection event, not
+// necessarily the exact same millisecond.
+const ALERT_MATCH_WINDOW_MS = 5 * 60 * 1000
+
+// Compact secondary line between two timeline dots — distance/speed/direction
+// for the leg leaving this stop. No divider of its own; it sits in the same
+// indented column as the dots above/below so the connecting line (drawn by
+// TimelineRow) reads as continuous through it.
 function LegConnector({ leg }: { leg: TrajectoryLeg }) {
   return (
-    <div className="flex items-center gap-3 pl-3.5 py-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-      <div style={{ width: 2, alignSelf: 'stretch', background: 'var(--border)' }} />
-      {leg.direction && (
-        <>
-          <Navigation
-            size={13}
-            style={{ color: 'var(--accent-blue-light)', transform: `rotate(${leg.bearing_deg}deg)`, flexShrink: 0 }}
-          />
-          <span className="font-semibold" style={{ color: 'var(--accent-blue-light)' }}>{leg.direction}</span>
-          <span>·</span>
-        </>
-      )}
-      <span>{leg.distance_km} km in {leg.duration_label}</span>
-      {leg.avg_speed_kmh != null && (
-        <span className="flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
-          <Gauge size={11} /> {leg.avg_speed_kmh} km/h
-        </span>
-      )}
+    <div className="flex items-start gap-3">
+      <div className="flex flex-col items-center flex-shrink-0" style={{ width: 10 }}>
+        <div className="timeline-dot-line" />
+      </div>
+      <div className="flex items-center gap-2 flex-wrap pb-2.5 text-[11px]" style={{ color: 'var(--text-muted)' }}>
+        {leg.direction && (
+          <>
+            <Navigation
+              size={11}
+              style={{ color: 'var(--accent-blue-light)', transform: `rotate(${leg.bearing_deg}deg)`, flexShrink: 0 }}
+            />
+            <span className="font-semibold" style={{ color: 'var(--accent-blue-light)' }}>{leg.direction}</span>
+            <span>·</span>
+          </>
+        )}
+        <span>{leg.distance_km} km in {leg.duration_label}</span>
+        {leg.avg_speed_kmh != null && (
+          <span className="flex items-center gap-1">
+            <Gauge size={10} /> {leg.avg_speed_kmh} km/h
+          </span>
+        )}
+      </div>
     </div>
   )
 }
 
-function SightingRow({ event, index }: { event: PlateEvent; index: number }) {
+// One row of the Route Timeline — a colored dot (real alert status) plus
+// time/camera, connected to the next row by a vertical line. The first and
+// last rows get no connector line from TimelineRow itself; the first stop
+// still draws its "downward" line here (unless it's also the last), and the
+// last stop is tagged "Current Location".
+function TimelineRow({
+  sighting, status, isLast,
+}: {
+  sighting: PlateEvent
+  status: LegStatus
+  isLast: boolean
+}) {
   return (
-    <div
-      className="flex items-start gap-3 p-3 rounded-lg transition-colors hover:bg-white/5"
-      style={{ border: '1px solid var(--border)', background: 'rgba(20,28,46,0.5)' }}
-    >
-      {/* Timeline connector */}
-      <div className="flex flex-col items-center flex-shrink-0">
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold"
-          style={{ background: 'var(--accent-blue)', color: 'white' }}
-        >
-          {index + 1}
-        </div>
-        {index < 100 && <div style={{ width: 2, flex: 1, minHeight: 12, background: 'var(--border)', marginTop: 4 }} />}
+    <div className="flex items-start gap-3">
+      <div className="flex flex-col items-center flex-shrink-0" style={{ width: 10 }}>
+        <span
+          className={`timeline-dot${isLast ? ' timeline-dot-current' : ''}`}
+          style={{ background: LEG_STATUS_COLOR[status] }}
+        />
+        {!isLast && <div className="timeline-dot-line" />}
       </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 flex-wrap mb-1">
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{event.camera_name}</span>
-          {event.road_segment && (
-            <span className="tag tag-blue">{event.road_segment}</span>
+      <div className="flex-1 min-w-0 pb-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-mono font-semibold" style={{ color: 'var(--accent-blue-light)' }}>
+            {format(new Date(sighting.timestamp), 'HH:mm')}
+          </span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{sighting.camera_name}</span>
+        </div>
+        <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Camera {sighting.camera_id}</div>
+        <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
+          {status === 'blacklisted' && (
+            <span className="tag tag-red">
+              <AlertTriangle size={10} /> BLACKLIST ALERT
+            </span>
           )}
-        </div>
-        <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-          <span className="flex items-center gap-1">
-            <Clock size={11} />
-            {format(new Date(event.timestamp), 'dd MMM HH:mm:ss')}
-          </span>
-          <span style={{ color: 'var(--text-muted)' }}>
-            {formatDistanceToNow(new Date(event.timestamp), { addSuffix: true })}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-          <span>📍 {event.lat.toFixed(4)}, {event.lng.toFixed(4)}</span>
+          {isLast && <span className="tag tag-gray">Current Location</span>}
         </div>
       </div>
     </div>
@@ -73,19 +105,66 @@ function SightingRow({ event, index }: { event: PlateEvent; index: number }) {
 export default function VehicleSearch() {
   const [query, setQuery] = useState('')
   const [history, setHistory] = useState<VehicleHistory | null>(null)
+  // Real alerts for this specific plate — used to color trajectory segments
+  // by what actually happened (anomaly / blacklist_hit), not a guess.
+  const [plateAlerts, setPlateAlerts] = useState<AlertEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [scrubberIndex, setScrubberIndex] = useState(0)
   const [showRoutes, setShowRoutes] = useState(false)
 
-  const search = useCallback(async () => {
-    if (!query.trim()) return
+  // ── Background traffic simulation — same client-side layer as the
+  // Dashboard's Live Map (see TrafficSimulation.tsx), reused here as-is so
+  // the searched vehicle's highlighted trajectory reads against a living
+  // city instead of a static map. ───────────────────────────────────────
+  const [simActive, setSimActive] = useState(false)
+  const [simStats, setSimStats] = useState<SimStats | null>(null)
+  const [simSelected, setSimSelected] = useState<SelectedVehicleInfo | null>(null)
+  const [simFollowing, setSimFollowing] = useState(false)
+  const [blacklistPlates, setBlacklistPlates] = useState<string[]>([])
+
+  useEffect(() => {
+    if (simActive && blacklistPlates.length === 0) {
+      getBlacklist().then(entries => setBlacklistPlates(entries.map(e => e.plate_number))).catch(() => {})
+    }
+  }, [simActive, blacklistPlates.length])
+
+  const handleSimSelectVehicle = useCallback((info: SelectedVehicleInfo | null) => {
+    setSimSelected(info)
+    setSimFollowing(info != null)
+  }, [])
+
+  const handleSimSelectedVehicleTick = useCallback((info: SelectedVehicleInfo) => {
+    setSimSelected(info)
+  }, [])
+
+  // ── Live suggestions dropdown ────────────────────────────────────────
+  // Backed by real endpoints (/vehicles/search, /vehicles/top) that were
+  // already built and wired into lib/api.ts but never actually used by
+  // any page — this is the first thing to consume them.
+  const [suggestions, setSuggestions] = useState<PlateSearchResult[]>([])
+  const [suggestLoading, setSuggestLoading] = useState(false)
+  const [suggestOpen, setSuggestOpen] = useState(false)
+  const [activeSuggestion, setActiveSuggestion] = useState(-1)
+  const [topPlatesCache, setTopPlatesCache] = useState<PlateSearchResult[] | null>(null)
+  const searchBoxRef = useRef<HTMLDivElement | null>(null)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const search = useCallback(async (plateOverride?: string) => {
+    const plate = (plateOverride ?? query).trim()
+    if (!plate) return
+    setSuggestOpen(false)
     setLoading(true)
     setError(null)
     setHistory(null)
+    setPlateAlerts([])
     setScrubberIndex(0)
     try {
-      const data = await getVehicleHistory(query.trim().toUpperCase())
+      const upper = plate.toUpperCase()
+      const [data] = await Promise.all([
+        getVehicleHistory(upper),
+        getAlerts({ plate_number: upper }).then(setPlateAlerts).catch(() => {}),
+      ])
       setHistory(data)
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Search failed')
@@ -94,13 +173,125 @@ export default function VehicleSearch() {
     }
   }, [query])
 
-  const handleKey = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') search()
+  // Debounced live search-as-you-type; falls back to "frequently seen"
+  // plates (cached after first fetch) when the field is empty, so opening
+  // the dropdown is never a dead end even before you've typed anything.
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    const trimmed = query.trim()
+
+    if (trimmed.length < 2) {
+      setSuggestions([])
+      if (topPlatesCache) {
+        setSuggestions(topPlatesCache)
+      } else {
+        getTopPlates(8).then(top => {
+          setTopPlatesCache(top)
+          setSuggestions(top)
+        }).catch(() => {})
+      }
+      return
+    }
+
+    setSuggestLoading(true)
+    debounceRef.current = setTimeout(() => {
+      searchPlates(trimmed)
+        .then(setSuggestions)
+        .catch(() => setSuggestions([]))
+        .finally(() => setSuggestLoading(false))
+    }, 250)
+
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query])
+
+  // Close the dropdown on an outside click.
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+        setSuggestOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClick)
+    return () => document.removeEventListener('mousedown', onClick)
+  }, [])
+
+  const selectSuggestion = (plate: string) => {
+    setQuery(plate)
+    setSuggestOpen(false)
+    search(plate)
   }
+
+  const handleKey = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { setSuggestOpen(false); return }
+    if (!suggestOpen || suggestions.length === 0) {
+      if (e.key === 'Enter') search()
+      return
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault()
+      setActiveSuggestion(i => (i + 1) % suggestions.length)
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault()
+      setActiveSuggestion(i => (i <= 0 ? suggestions.length - 1 : i - 1))
+    } else if (e.key === 'Enter') {
+      if (activeSuggestion >= 0 && activeSuggestion < suggestions.length) {
+        selectSuggestion(suggestions[activeSuggestion].plate_number)
+      } else {
+        search()
+      }
+    }
+  }
+
+  useEffect(() => { setActiveSuggestion(-1) }, [suggestions])
+
+  // ── Playback — auto-advances the scrubber, replacing the old plain
+  // slider-only control with a real play/pause + speed transport. ────────
+  const [playing, setPlaying] = useState(false)
+  const [playbackSpeed, setPlaybackSpeed] = useState(1)
+  useEffect(() => {
+    if (!playing || !history || history.sightings.length < 2) return
+    const id = setInterval(() => {
+      setScrubberIndex(i => {
+        if (i >= history.sightings.length - 1) {
+          setPlaying(false)
+          return i
+        }
+        return i + 1
+      })
+    }, 1100 / playbackSpeed)
+    return () => clearInterval(id)
+  }, [playing, playbackSpeed, history])
+
+  useEffect(() => { setPlaying(false) }, [history?.plate_number])
 
   // For trajectory scrubber: only show points up to scrubberIndex
   const trajectorySlice = history?.trajectory?.slice(0, scrubberIndex + 1) ?? []
   const currentSighting = history?.sightings?.[scrubberIndex]
+
+  // ── Real per-stop/per-leg status, derived from actual alerts fired for
+  // this plate (matched by camera + time window) — never fabricated. ─────
+  const fullStopStatuses: LegStatus[] = (history?.sightings ?? []).map(s => {
+    const match = plateAlerts.find(a =>
+      a.camera_id === s.camera_id &&
+      Math.abs(new Date(a.timestamp).getTime() - new Date(s.timestamp).getTime()) < ALERT_MATCH_WINDOW_MS
+    )
+    if (match?.alert_type === 'blacklist_hit') return 'blacklisted'
+    if (match?.alert_type === 'anomaly') return 'suspicious'
+    return 'normal'
+  })
+  const fullStopLabels = (history?.sightings ?? []).map(s => ({
+    name: s.camera_name,
+    time: format(new Date(s.timestamp), 'HH:mm'),
+    cameraId: s.camera_id,
+  }))
+  // A leg's color follows the status of the stop it arrives at.
+  const fullLegStatuses: LegStatus[] = fullStopStatuses.slice(1)
+
+  const isScrubbing = trajectorySlice.length >= 2 && scrubberIndex < (history?.sightings.length ?? 0) - 1
+  const stopStatuses = isScrubbing ? fullStopStatuses.slice(0, scrubberIndex + 1) : fullStopStatuses
+  const stopLabels = isScrubbing ? fullStopLabels.slice(0, scrubberIndex + 1) : fullStopLabels
+  const legStatuses = isScrubbing ? fullLegStatuses.slice(0, scrubberIndex) : fullLegStatuses
 
   return (
     <div className="flex h-full overflow-hidden">
@@ -111,22 +302,53 @@ export default function VehicleSearch() {
       >
         {/* Search box */}
         <div className="p-4" style={{ borderBottom: '1px solid var(--border)' }}>
-          <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
-            Vehicle Search & Trajectory
+          <div className="page-kicker">PLATE LOOKUP</div>
+          <div className="page-title-sm mb-3">
+            Vehicle Search &amp; Trajectory
           </div>
-          <div className="flex gap-2">
-            <input
-              id="plate-search-input"
-              className="search-input"
-              placeholder="e.g. DL01AB1234"
-              value={query}
-              onChange={e => setQuery(e.target.value.toUpperCase())}
-              onKeyDown={handleKey}
-            />
+          <div className="flex gap-2" ref={searchBoxRef} style={{ position: 'relative' }}>
+            <div className="search-field">
+              <Search size={15} className="search-field-icon" />
+              <input
+                id="plate-search-input"
+                className="search-input"
+                placeholder="e.g. DL01AB1234"
+                value={query}
+                onChange={e => setQuery(e.target.value.toUpperCase())}
+                onFocus={() => setSuggestOpen(true)}
+                onKeyDown={handleKey}
+                autoComplete="off"
+              />
+              {suggestOpen && (suggestions.length > 0 || suggestLoading) && (
+                <div className="suggest-dropdown" id="plate-suggest-dropdown">
+                  {query.trim().length < 2 && (
+                    <div className="suggest-dropdown-label">
+                      <Radar size={11} /> FREQUENTLY SEEN
+                    </div>
+                  )}
+                  {suggestLoading && suggestions.length === 0 ? (
+                    <div className="suggest-dropdown-empty"><RadarLoader size={14} /></div>
+                  ) : (
+                    suggestions.map((s, i) => (
+                      <button
+                        key={s.plate_number}
+                        type="button"
+                        className={`suggest-row ${i === activeSuggestion ? 'active' : ''}`}
+                        onMouseDown={e => e.preventDefault()}
+                        onClick={() => selectSuggestion(s.plate_number)}
+                      >
+                        <span className="plate-badge text-xs">{s.plate_number}</span>
+                        <span className="suggest-row-count">{s.sighting_count} sighting{s.sighting_count === 1 ? '' : 's'}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
             <button
               id="plate-search-btn"
               className="btn-primary flex items-center gap-2 whitespace-nowrap"
-              onClick={search}
+              onClick={() => search()}
               disabled={loading}
             >
               {loading ? <RadarLoader size={14} /> : <Search size={14} />}
@@ -143,18 +365,53 @@ export default function VehicleSearch() {
         )}
 
         {/* Result header */}
+        {/* Vehicle Details card */}
         {history && (
           <div className="p-4" style={{ borderBottom: '1px solid var(--border)' }}>
+            <div className="page-kicker mb-2">VEHICLE DETAILS</div>
+
             <div className="flex items-center gap-3 mb-3">
-              <span className={`plate-badge ${history.blacklisted ? 'blacklisted' : ''}`}>
-                {history.plate_number}
-              </span>
-              {history.blacklisted && (
-                <span className="tag tag-red flex items-center gap-1">
-                  <AlertTriangle size={10} />
-                  BLACKLISTED
+              {/* No vehicle photo exists in this system's data model — a
+                  generic vehicle glyph stands in rather than a fabricated
+                  image. */}
+              <div
+                className="flex items-center justify-center flex-shrink-0 rounded-lg"
+                style={{ width: 44, height: 44, background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              >
+                <Car size={22} style={{ color: 'var(--text-muted)' }} />
+              </div>
+              <div className="min-w-0 flex items-center gap-2 flex-wrap">
+                <span className={`plate-badge ${history.blacklisted ? 'blacklisted' : ''}`}>
+                  {history.plate_number}
                 </span>
+                {history.blacklisted && (
+                  <span className="tag tag-red">
+                    <AlertTriangle size={10} />
+                    BLACKLISTED
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-1.5 text-xs mb-3">
+              <div className="flex items-center justify-between">
+                <span style={{ color: 'var(--text-muted)' }}>Status</span>
+                <span className="font-semibold" style={{ color: history.blacklisted ? 'var(--accent-red)' : 'var(--accent-green)' }}>
+                  {history.blacklisted ? 'Blacklisted' : 'Active'}
+                </span>
+              </div>
+              {history.last_seen && (
+                <div className="flex items-center justify-between">
+                  <span style={{ color: 'var(--text-muted)' }}>Last Seen</span>
+                  <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {format(new Date(history.last_seen), 'dd MMM HH:mm')}
+                  </span>
+                </div>
               )}
+              <div className="flex items-center justify-between">
+                <span style={{ color: 'var(--text-muted)' }}>Total Detections</span>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{history.total_sightings}</span>
+              </div>
             </div>
 
             {history.blacklisted && history.blacklist_info && (
@@ -163,46 +420,21 @@ export default function VehicleSearch() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2 rounded" style={{ background: 'var(--bg-card)' }}>
-                <div style={{ color: 'var(--text-muted)' }}>Sightings</div>
-                <div className="font-bold text-base mt-0.5" style={{ color: 'var(--text-primary)' }}>{history.total_sightings}</div>
-              </div>
-              <div className="p-2 rounded" style={{ background: 'var(--bg-card)' }}>
-                <div style={{ color: 'var(--text-muted)' }}>Cameras</div>
-                <div className="font-bold text-base mt-0.5" style={{ color: 'var(--text-primary)' }}>{history.cameras_visited.length}</div>
-              </div>
-            </div>
-
-            {/* Trajectory scrubber */}
-            {history.sightings.length > 1 && (
-              <div className="mt-3">
-                <div className="text-xs mb-1 flex justify-between" style={{ color: 'var(--text-muted)' }}>
-                  <span>Timeline Scrubber</span>
-                  <span>{scrubberIndex + 1} / {history.sightings.length}</span>
-                </div>
-                <input
-                  id="trajectory-scrubber"
-                  type="range"
-                  min={0}
-                  max={history.sightings.length - 1}
-                  value={scrubberIndex}
-                  onChange={e => setScrubberIndex(Number(e.target.value))}
-                  className="w-full"
-                  style={{ accentColor: 'var(--accent-blue-light)' }}
-                />
-                {currentSighting && (
-                  <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
-                    📍 {currentSighting.camera_name} — {format(new Date(currentSighting.timestamp), 'HH:mm:ss')}
-                  </div>
-                )}
-              </div>
+            {history.total_sightings > 0 && (
+              <button
+                type="button"
+                className="text-xs font-semibold flex items-center gap-1"
+                style={{ color: 'var(--accent-blue-light)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+                onClick={() => document.getElementById('route-timeline-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              >
+                View Full Details <ArrowRight size={12} />
+              </button>
             )}
           </div>
         )}
 
-        {/* Sightings list */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
+        {/* Route Timeline card */}
+        <div id="route-timeline-card" className="flex-1 overflow-y-auto p-4">
           {!history && !loading && (
             <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: 'var(--text-muted)' }}>
               <Search size={32} className="mb-3 opacity-20" />
@@ -210,9 +442,12 @@ export default function VehicleSearch() {
               <div className="text-xs mt-1">e.g. DL01AB1234</div>
             </div>
           )}
+          {history && history.sightings.length > 0 && (
+            <div className="page-kicker mb-3">ROUTE TIMELINE</div>
+          )}
           {history?.sightings.map((event, i) => (
             <div key={event.event_id}>
-              <SightingRow event={event} index={i} />
+              <TimelineRow sighting={event} status={fullStopStatuses[i] ?? 'normal'} isLast={i === history.sightings.length - 1} />
               {history.legs[i] && <LegConnector leg={history.legs[i]} />}
             </div>
           ))}
@@ -249,8 +484,130 @@ export default function VehicleSearch() {
             trajectory={trajectorySlice.length >= 2 ? trajectorySlice : history?.trajectory}
             trajectoryLabel={history?.plate_number}
             legs={trajectorySlice.length >= 2 ? history?.legs.slice(0, trajectorySlice.length - 1) : history?.legs}
+            legStatuses={legStatuses}
+            stopStatuses={stopStatuses}
+            stopLabels={stopLabels}
+            showTrajectoryLegend={!showRoutes}
             showRoutedPaths={showRoutes}
+            basemapStyle="satellite"
+            simulationActive={simActive}
+            simulationBlacklistPlates={blacklistPlates}
+            onSimulationStats={setSimStats}
+            simSelectedVehicleId={simSelected?.id ?? null}
+            onSimSelectVehicle={handleSimSelectVehicle}
+            onSimSelectedVehicleTick={handleSimSelectedVehicleTick}
+            simFollowing={simFollowing}
           />
+
+          <button
+            id="vehicle-sim-toggle-btn"
+            onClick={() => {
+              const turningOn = !simActive
+              setSimActive(turningOn)
+              if (!turningOn) { setSimSelected(null); setSimFollowing(false) }
+            }}
+            className="sim-toggle-btn"
+            data-active={simActive}
+            style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 600 }}
+          >
+            <Radar size={14} className={simActive ? 'animate-spin-slow' : undefined} />
+            {simActive ? 'Simulation: ON' : 'Live Traffic Simulation'}
+          </button>
+
+          {simActive && (
+            <div className="sim-mini-panel">
+              <div className="flex items-center gap-2 mb-2">
+                <Radar size={12} style={{ color: 'var(--accent-blue-light)' }} className="animate-spin-slow" />
+                <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.06em' }}>LIVE SIMULATION</span>
+              </div>
+              <div className="flex items-center gap-4 mb-1">
+                <div>
+                  <div className="text-base font-bold font-mono" style={{ color: 'var(--text-primary)' }}>{simStats?.active ?? 0}</div>
+                  <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>vehicles</div>
+                </div>
+                <div>
+                  <div className="text-base font-bold font-mono" style={{ color: 'var(--accent-red)' }}>{simStats?.blacklisted ?? 0}</div>
+                  <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>blacklisted</div>
+                </div>
+                <div>
+                  <div className="text-base font-bold font-mono" style={{ color: 'var(--accent-amber)' }}>{simStats?.suspicious ?? 0}</div>
+                  <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>suspicious</div>
+                </div>
+              </div>
+
+              {simSelected && (
+                <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <div className="flex items-center gap-1.5">
+                      {simSelected.kind === 'blacklisted' ? <ShieldAlert size={12} color={VEHICLE_KIND_COLOR[simSelected.kind]} /> : <Eye size={12} color={VEHICLE_KIND_COLOR[simSelected.kind]} />}
+                      <span className="text-[11px] font-semibold" style={{ color: VEHICLE_KIND_COLOR[simSelected.kind] }}>Tracking</span>
+                    </div>
+                    <button
+                      onClick={() => { setSimSelected(null); setSimFollowing(false) }}
+                      className="p-0.5 rounded hover:bg-white/10 transition-colors"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                  <div className="plate-badge text-xs mb-1.5">{simSelected.plate}</div>
+                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-secondary)' }}>{VEHICLE_KIND_LABEL[simSelected.kind]}</div>
+                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
+                    {simSelected.fromCamera} → {simSelected.toCamera}
+                  </div>
+                  <button
+                    onClick={() => setSimFollowing(f => !f)}
+                    className="btn-secondary w-full flex items-center justify-center gap-1.5 mt-2 py-1 text-[11px]"
+                  >
+                    <Crosshair size={11} />
+                    {simFollowing ? 'Following' : 'Follow'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {history && history.sightings.length > 1 && (
+            <div className="playback-bar">
+              <button
+                id="playback-play-btn"
+                className="playback-play-btn"
+                onClick={() => {
+                  if (!playing && scrubberIndex >= history.sightings.length - 1) setScrubberIndex(0)
+                  setPlaying(p => !p)
+                }}
+              >
+                {playing ? <Pause size={14} /> : <Play size={14} />}
+              </button>
+
+              <input
+                id="playback-scrubber"
+                type="range"
+                min={0}
+                max={history.sightings.length - 1}
+                value={scrubberIndex}
+                onChange={e => { setPlaying(false); setScrubberIndex(Number(e.target.value)) }}
+                className="playback-scrubber"
+              />
+
+              <span className="playback-time">
+                {currentSighting ? format(new Date(currentSighting.timestamp), 'HH:mm:ss') : '--:--:--'}
+                {' / '}
+                {format(new Date(history.sightings[history.sightings.length - 1].timestamp), 'HH:mm:ss')}
+              </span>
+
+              <select
+                id="playback-speed"
+                className="playback-speed-select"
+                value={playbackSpeed}
+                onChange={e => setPlaybackSpeed(Number(e.target.value))}
+              >
+                <option value={1}>1x</option>
+                <option value={2}>2x</option>
+                <option value={4}>4x</option>
+              </select>
+            </div>
+          )}
         </div>
       </div>
     </div>

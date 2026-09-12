@@ -13,9 +13,17 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Install Python dependencies first (layer cache optimization)
+# Install Python dependencies
 COPY requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Replace CUDA PyTorch with CPU-only PyTorch
+RUN pip uninstall -y torch torchvision && \
+    pip install --no-cache-dir \
+    torch==2.6.0+cpu \
+    torchvision==0.21.0+cpu \
+    --index-url https://download.pytorch.org/whl/cpu
 
 # Copy source
 COPY . .
@@ -23,7 +31,7 @@ COPY . .
 # Create necessary directories
 RUN mkdir -p /app/data/sample_videos /app/models /app/data/snapshots
 
-# Pre-download PaddleOCR models at build time (avoids runtime download)
+# Pre-download PaddleOCR models
 RUN python -c "from paddleocr import PaddleOCR; PaddleOCR(use_angle_cls=True, lang='en', show_log=False)" || true
 
 EXPOSE 8000

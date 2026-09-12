@@ -129,11 +129,12 @@ export default function BlacklistView() {
     <div className="h-full overflow-y-auto p-6" style={{ background: 'var(--bg-primary)' }}>
       <div className="max-w-5xl mx-auto space-y-6">
         <div>
-          <h1 className="text-xl font-bold flex items-center gap-2" style={{ color: 'var(--text-primary)' }}>
+          <div className="page-kicker">WATCHLIST</div>
+          <h1 className="page-title flex items-center gap-2">
             <Ban size={18} style={{ color: 'var(--accent-red)' }} />
             Blacklist &amp; Real-Time Detection Test
           </h1>
-          <p className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
             Add plates to the watchlist — this only updates the list, it doesn't fire an alert by itself. Real alerts fire when actual footage is processed and a match is found (upload below, or process a live camera feed).
           </p>
         </div>

@@ -1,7 +1,18 @@
 import { useState } from 'react'
-import { Eye, LogIn } from 'lucide-react'
+import { LogIn } from 'lucide-react'
 import RadarLoader from '../components/RadarLoader'
+import Logomark from '../components/Logomark'
 import { useAuth } from '../lib/auth'
+
+// Fixed (not random-per-render) scatter of "camera" nodes across the login
+// background — stable positions so the page doesn't visibly re-shuffle on
+// every re-render (e.g. while typing).
+const LOGIN_NODES = [
+  { x: 12, y: 18, delay: 0 }, { x: 24, y: 62, delay: 0.8 }, { x: 8, y: 78, delay: 1.6 },
+  { x: 33, y: 30, delay: 0.4 }, { x: 40, y: 85, delay: 2.2 }, { x: 60, y: 15, delay: 1.2 },
+  { x: 70, y: 45, delay: 0.2 }, { x: 88, y: 20, delay: 1.8 }, { x: 92, y: 68, delay: 0.6 },
+  { x: 78, y: 82, delay: 2.6 }, { x: 55, y: 60, delay: 1.4 }, { x: 18, y: 45, delay: 2.0 },
+]
 
 export default function Login() {
   const { login } = useAuth()
@@ -25,14 +36,25 @@ export default function Login() {
   }
 
   return (
-    <div className="h-screen w-screen flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-      <div className="glass-card p-8 w-full" style={{ maxWidth: 380 }}>
+    <div className="h-screen w-screen flex items-center justify-center relative overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+      {/* Signature background — a slow radar sweep behind a faint network of
+          camera nodes, standing in for the "eye of the city" idea before a
+          single word of copy loads. Pure CSS, no extra weight on the bundle. */}
+      <div className="login-radar-bg" aria-hidden="true">
+        <div className="login-radar-sweep" />
+        <div className="login-radar-rings" />
+        {LOGIN_NODES.map((n, i) => (
+          <span key={i} className="login-network-node" style={{ left: `${n.x}%`, top: `${n.y}%`, animationDelay: `${n.delay}s` }} />
+        ))}
+      </div>
+
+      <div className="glass-card p-8 w-full" style={{ maxWidth: 380, position: 'relative', zIndex: 1 }}>
         <div className="flex flex-col items-center mb-6">
           <div
             className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-            style={{ background: 'linear-gradient(135deg, #023047 0%, #00b4d8 55%, #ffaa4c 100%)', boxShadow: '0 0 18px rgba(0,180,216,0.45)' }}
+            style={{ background: 'linear-gradient(135deg, #023047 0%, #00d9ff 55%, #ffaa4c 100%)', boxShadow: '0 0 18px rgba(0,217,255,0.45)' }}
           >
-            <Eye size={22} color="white" />
+            <Logomark size={22} color="white" />
           </div>
           <div className="font-bold text-lg" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>NAGARNETRA</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>

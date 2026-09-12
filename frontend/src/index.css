@@ -6,30 +6,35 @@
 @import "leaflet/dist/leaflet.css";
 
 /* ── Base ──────────────────────────────────────────────────── */
-/* Dark "signal" palette — deep space-navy base, electric cyan as the primary
-   data/tech accent (common language for security & smart-city dashboards),
-   warm amber-orange for trajectory/highlights, a clean red for alerts.
-   A signature navy->cyan->amber gradient is used deliberately in a few
-   prominent spots (header accent bar, buttons, active nav, logo) rather
-   than everywhere, so it reads as a design signature, not noise. */
+/* "Night Command Center" palette — inspired by long-exposure night traffic
+   photography (headlight/taillight light-trails): a near-black navy base,
+   electric cyan as the single primary accent, and a proper three-tier
+   severity ladder (amber warning -> amber-orange suspicious -> red danger
+   -> deep red critical) instead of one generic "red for alerts." Trajectory
+   orange is kept separate from the severity ladder — it means "path", not
+   "problem". */
 :root {
-  --bg-primary: #0a0e17;
-  --bg-secondary: #0e1524;
-  --bg-card: #141c2e;
-  --bg-card-hover: #1b2740;
-  --border: rgba(80, 150, 190, 0.16);
-  --text-primary: #eef4f9;
-  --text-secondary: #8fa3bd;
-  --text-muted: #566d8a;
-  --accent-blue: #00b4d8;
-  --accent-blue-light: #48cae4;
+  --bg-primary: #070b12;
+  --bg-secondary: #0a111c;
+  --bg-card: #0f1825;
+  --bg-card-hover: #152235;
+  --border: #203247;
+  --text-primary: #eaf4ff;
+  --text-secondary: #94a9c4;
+  --text-muted: #60758d;
+  --accent-blue: #00d9ff;
+  --accent-blue-light: #38e5ff;
   --accent-orange: #ffaa4c;
-  --accent-red: #e63946;
+  --accent-red: #ef4444;
+  --accent-critical: #dc2626;
+  --accent-suspicious: #f59e0b;
   --accent-green: #22c55e;
   --accent-amber: #fbbf24;
-  --glow-blue: rgba(0, 180, 216, 0.35);
-  --glow-red: rgba(230, 57, 70, 0.35);
-  --brand-gradient: linear-gradient(90deg, #0a0e17 0%, #023047 25%, #00b4d8 55%, #48cae4 75%, #ffaa4c 100%);
+  --glow-blue: rgba(0, 217, 255, 0.35);
+  --glow-red: rgba(239, 68, 68, 0.35);
+  --glow-critical: rgba(220, 38, 38, 0.4);
+  --glow-suspicious: rgba(245, 158, 11, 0.35);
+  --brand-gradient: linear-gradient(90deg, #070b12 0%, #023047 25%, #00d9ff 55%, #38e5ff 75%, #ffaa4c 100%);
 }
 
 * {
@@ -47,9 +52,9 @@ html, body, #root {
 body {
   background-color: var(--bg-primary);
   background-image:
-    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(0, 180, 216, 0.12), transparent 60%),
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(0, 217, 255, 0.12), transparent 60%),
     radial-gradient(ellipse 700px 500px at 100% 0%, rgba(255, 170, 76, 0.07), transparent 55%),
-    radial-gradient(circle, rgba(80, 150, 190, 0.07) 1px, transparent 1px);
+    radial-gradient(circle, rgba(32, 50, 71, 0.5) 1px, transparent 1px);
   background-size: auto, auto, 28px 28px;
   background-repeat: no-repeat, no-repeat, repeat;
   background-attachment: fixed, fixed, fixed;
@@ -93,7 +98,7 @@ body {
 /* ── Glass card ─────────────────────────────────────────────── */
 .glass-card {
   position: relative;
-  background: rgba(20, 28, 46, 0.72);
+  background: rgba(15, 24, 37, 0.72);
   backdrop-filter: blur(18px) saturate(1.15);
   -webkit-backdrop-filter: blur(18px) saturate(1.15);
   border: 1px solid var(--border);
@@ -102,7 +107,7 @@ body {
 }
 
 .glass-card-dark {
-  background: rgba(6, 9, 15, 0.85);
+  background: rgba(7, 11, 18, 0.85);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid var(--border);
@@ -111,11 +116,11 @@ body {
 
 /* ── Glow effects ────────────────────────────────────────────── */
 .glow-blue {
-  box-shadow: 0 0 20px var(--glow-blue), 0 0 40px rgba(0, 180, 216, 0.1);
+  box-shadow: 0 0 20px var(--glow-blue), 0 0 40px rgba(0, 217, 255, 0.1);
 }
 
 .glow-red {
-  box-shadow: 0 0 20px var(--glow-red), 0 0 40px rgba(230, 57, 70, 0.1);
+  box-shadow: 0 0 20px var(--glow-red), 0 0 40px rgba(239, 68, 68, 0.1);
 }
 
 /* ── Alert badge pulse ─────────────────────────────────────── */
@@ -131,7 +136,7 @@ body {
 /* ── Plate badge ────────────────────────────────────────────── */
 .plate-badge {
   font-family: 'JetBrains Mono', monospace;
-  background: linear-gradient(135deg, #16233a 0%, #0a0e17 100%);
+  background: linear-gradient(135deg, #16233a 0%, #070b12 100%);
   border: 2px solid var(--accent-blue);
   border-radius: 6px;
   padding: 4px 12px;
@@ -140,7 +145,7 @@ body {
   font-size: 0.9rem;
   color: #ffffff;
   text-transform: uppercase;
-  box-shadow: 0 0 8px rgba(0, 180, 216, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
+  box-shadow: 0 0 8px rgba(0, 217, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 
 .plate-badge.blacklisted {
@@ -164,7 +169,7 @@ body {
 
 .status-dot.alert {
   background: var(--accent-red);
-  box-shadow: 0 0 6px rgba(230, 57, 70, 0.6);
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.6);
   animation: alertPulse 1.5s ease-in-out infinite;
 }
 
@@ -175,7 +180,7 @@ body {
 
 /* ── Leaflet map, dark theme ─────────────────────────────────── */
 .leaflet-container {
-  background: #0a0e17 !important;
+  background: #070b12 !important;
   font-family: 'Inter', sans-serif;
 }
 
@@ -192,17 +197,17 @@ body {
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 rgba(80, 150, 190, 0.08), 0 0 0 1px rgba(0, 180, 216, 0.08);
+  box-shadow: inset 0 1px 0 rgba(80, 150, 190, 0.08), 0 0 0 1px rgba(0, 217, 255, 0.08);
 }
 
 .leaflet-control-attribution {
-  background: rgba(6, 9, 15, 0.8) !important;
+  background: rgba(7, 11, 18, 0.8) !important;
   color: rgba(143, 163, 189, 0.65) !important;
   font-size: 10px;
 }
 
 .leaflet-control-zoom a {
-  background: rgba(20, 28, 46, 0.9) !important;
+  background: rgba(15, 24, 37, 0.9) !important;
   color: var(--text-primary) !important;
   border-color: var(--border) !important;
 }
@@ -219,7 +224,7 @@ body {
   border-radius: 50%;
   background: var(--accent-blue);
   border: 2px solid white;
-  box-shadow: 0 0 10px rgba(0, 180, 216, 0.8), 0 0 20px rgba(0, 180, 216, 0.4);
+  box-shadow: 0 0 10px rgba(0, 217, 255, 0.8), 0 0 20px rgba(0, 217, 255, 0.4);
   cursor: pointer;
   transition: transform 0.2s ease;
 }
@@ -230,8 +235,41 @@ body {
 
 .camera-marker-dot.alert {
   background: var(--accent-red);
-  box-shadow: 0 0 10px rgba(230, 57, 70, 0.9), 0 0 24px rgba(230, 57, 70, 0.5);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.9), 0 0 24px rgba(239, 68, 68, 0.5);
   animation: alertPulse 1.5s ease-in-out infinite;
+}
+
+.camera-marker-dot.glow {
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px rgba(0, 217, 255, 0.85), 0 0 18px rgba(0, 217, 255, 0.4);
+  animation: cameraGlowBreathe 2.6s ease-in-out infinite;
+}
+
+@keyframes cameraGlowBreathe {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 217, 255, 0.85), 0 0 18px rgba(0, 217, 255, 0.4); }
+  50% { box-shadow: 0 0 12px rgba(0, 217, 255, 1), 0 0 28px rgba(0, 217, 255, 0.6); }
+}
+
+/* Expanding ripple rings radiating out from a live-alert camera marker —
+   two rings staggered by animation-delay so a new one is always mid-way
+   out as the previous one fades, reading as a continuous "live" signal
+   rather than a single one-shot pulse. */
+.camera-marker-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border-radius: 50%;
+  border: 2px solid var(--accent-red);
+  animation: cameraRipple 1.8s cubic-bezier(0.2, 0.6, 0.4, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes cameraRipple {
+  0% { transform: scale(1); opacity: 0.8; }
+  100% { transform: scale(3.2); opacity: 0; }
 }
 
 /* ── Trajectory highlight marker (pinpoints the exact sighted camera) ────── */
@@ -245,11 +283,14 @@ body {
 
 .trajectory-highlight-dot {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  width: 10px;
-  height: 10px;
+  top: 4px;
+  left: 4px;
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: #facc15;
   border: 2px solid #fff;
   box-shadow: 0 0 10px rgba(250, 204, 21, 0.9);
@@ -259,6 +300,239 @@ body {
   0% { transform: scale(0.6); opacity: 0.9; }
   70% { transform: scale(2.4); opacity: 0; }
   100% { opacity: 0; }
+}
+
+/* ── Persistent trajectory stop labels ────────────────────────────────────────
+   Leaflet's default Tooltip is a plain white box with a tiny black arrow —
+   override it entirely so a trajectory replay reads as labeled ops-console
+   annotations, not browser-default tooltips. */
+.trajectory-stop-label.leaflet-tooltip {
+  background: rgba(10, 17, 28, 0.94);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 9px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+  font-family: 'Inter', sans-serif;
+  opacity: 1;
+}
+
+.trajectory-stop-label.leaflet-tooltip::before {
+  border-right-color: rgba(10, 17, 28, 0.94) !important;
+}
+
+.trajectory-stop-label.status-blacklisted.leaflet-tooltip {
+  border-color: var(--accent-red);
+  box-shadow: 0 0 12px var(--glow-red);
+}
+
+.trajectory-stop-label.status-suspicious.leaflet-tooltip {
+  border-color: var(--accent-amber);
+}
+
+.trajectory-stop-label-name {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.trajectory-stop-label-meta {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  white-space: nowrap;
+}
+
+.trajectory-stop-label-alert {
+  margin-top: 3px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(239, 68, 68, 0.18);
+  color: var(--accent-red);
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Trajectory legend box (top-right, Vehicle Search map) ──────────────────── */
+.map-trajectory-legend-box {
+  position: absolute;
+  top: 56px;
+  right: 10px;
+  z-index: 600;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 14, 22, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+  min-width: 150px;
+}
+
+.map-trajectory-legend-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.map-trajectory-legend-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  padding: 2px 0;
+}
+
+.map-trajectory-legend-row i {
+  display: inline-block;
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+.map-trajectory-legend-camera {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  background: var(--accent-blue);
+  box-shadow: 0 0 5px var(--glow-blue);
+}
+
+.map-trajectory-legend-arrow {
+  width: 0 !important;
+  height: 0 !important;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-bottom: 8px solid var(--accent-blue-light);
+  border-radius: 0 !important;
+}
+
+/* ── Playback Simulation bar (bottom of Vehicle Search trajectory map) ──────── */
+.playback-bar {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  left: 200px;
+  z-index: 600;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(10, 14, 22, 0.88);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+
+.playback-play-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent-blue);
+  color: #05131c;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.playback-play-btn:hover {
+  filter: brightness(1.15);
+}
+
+.playback-scrubber {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--accent-blue-light);
+}
+
+.playback-time {
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.playback-speed-select {
+  flex-shrink: 0;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+/* ── Traffic simulation toggles (Dashboard live map) ─────────────────────────── */
+.sim-toggle-row {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  z-index: 600;
+  display: flex;
+  gap: 8px;
+}
+
+.sim-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(10, 14, 22, 0.85);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(6px);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sim-toggle-btn:hover {
+  border-color: rgba(0, 217, 255, 0.4);
+  color: var(--text-primary);
+}
+
+.sim-toggle-btn[data-active='true'] {
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.28) 0%, rgba(0, 217, 255, 0.12) 100%);
+  border-color: var(--accent-blue);
+  color: var(--accent-blue-light);
+  box-shadow: 0 0 16px rgba(0, 217, 255, 0.25);
+}
+
+.animate-spin-slow {
+  animation: spin 2.4s linear infinite;
+}
+
+/* ── Live simulation mini-panel (Vehicle Search map — compact twin of the
+   Dashboard's sidebar simulation panel) ─────────────────────────────────── */
+.sim-mini-panel {
+  position: absolute;
+  /* Leaflet's default zoom control also sits at top:10px/left:10px — clear
+     it vertically instead of overlapping (this collided in testing: the
+     zoom buttons were rendering on top of the vehicle count). */
+  top: 84px;
+  left: 10px;
+  z-index: 600;
+  width: 168px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(10, 14, 22, 0.9);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
 }
 
 /* ── Trajectory / Possible Routes toggle (Vehicle Search map) ──────────────── */
@@ -356,6 +630,43 @@ body {
   filter: none !important;
 }
 
+/* Esri World_Imagery is real daytime satellite photography — bright and
+   fully saturated on its own — so it's darkened and slightly desaturated to
+   read as a "night surveillance" view consistent with the app's theme,
+   while keeping enough contrast for the road/label overlay layers on top
+   to stay legible. */
+.map-basemap-satellite .leaflet-tile-pane {
+  filter: brightness(0.5) contrast(1.1) saturate(0.8);
+}
+
+/* Cyan "night-vision" variant of the same satellite imagery — grayscale
+   first (so greens/tans don't just shift to other random hues under
+   hue-rotate), then sepia+hue-rotate+saturate retints that monochrome
+   image to a single cyan tone, matching the app's cyan accent color. */
+.map-basemap-satellite-cyan .leaflet-tile-pane {
+  filter: grayscale(1) brightness(0.55) contrast(1.15) sepia(0.6) hue-rotate(155deg) saturate(2.4);
+}
+
+/* Amber/thermal variant of the same satellite imagery — sepia's native tone
+   is already warm/orange, so this nudges it slightly toward red rather than
+   rotating positive (which lands on yellow/olive, not amber). */
+.map-basemap-satellite-amber .leaflet-tile-pane {
+  filter: grayscale(1) brightness(0.6) contrast(1.15) sepia(1) hue-rotate(-8deg) saturate(2.2);
+}
+
+/* Classic NVG-goggles green variant of the same satellite imagery. */
+.map-basemap-satellite-green .leaflet-tile-pane {
+  filter: grayscale(1) brightness(0.55) contrast(1.15) sepia(0.6) hue-rotate(85deg) saturate(2.6);
+}
+
+/* Esri NatGeo_World_Map is a light cream/tan cartographic style — needs a
+   strong brightness cut (similar to the topo basemap tried earlier) to read
+   as dark, with contrast pushed up so its red highways and labels stay
+   legible once darkened this far. */
+.map-basemap-natgeo .leaflet-tile-pane {
+  filter: brightness(0.4) contrast(1.2) saturate(0.85);
+}
+
 /* ── Trajectory line ────────────────────────────────────────── */
 .trajectory-path {
   stroke: var(--accent-orange);
@@ -382,7 +693,7 @@ body {
   position: absolute;
   inset: 0;
   border-radius: 50%;
-  border: 2px solid rgba(0, 180, 216, 0.18);
+  border: 2px solid rgba(0, 217, 255, 0.18);
 }
 
 .radar-loader::after {
@@ -413,6 +724,129 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* ── Login signature background ──────────────────────────────
+   A large slow-rotating radar sweep + faint concentric rings, centered
+   behind the login card, with a scatter of "camera node" dots that pulse
+   at staggered intervals — reads as a live city sensor network rather than
+   an empty dark screen, and ties directly to the "Eye of the City" tagline. */
+.login-radar-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.login-radar-sweep {
+  position: absolute;
+  width: 1100px;
+  height: 1100px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 217, 255, 0.16) 25deg, transparent 70deg);
+  animation: loginSweepSpin 10s linear infinite;
+}
+
+@keyframes loginSweepSpin {
+  to { transform: rotate(360deg); }
+}
+
+.login-radar-rings {
+  position: absolute;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 217, 255, 0.14);
+}
+
+.login-radar-rings::before,
+.login-radar-rings::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 217, 255, 0.14);
+  transform: translate(-50%, -50%);
+}
+
+.login-radar-rings::before { width: 640px; height: 640px; }
+.login-radar-rings::after { width: 900px; height: 900px; border-color: rgba(0, 217, 255, 0.09); }
+
+.login-network-node {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px 2px rgba(0, 217, 255, 0.7);
+  animation: loginNodePulse 3.6s ease-in-out infinite;
+}
+
+@keyframes loginNodePulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.6); }
+}
+
+@media (max-width: 640px) {
+  .login-radar-sweep, .login-radar-rings { display: none; }
+}
+
+/* ── Page titles — signature "command center" heading pattern ─────────
+   A small uppercase mono kicker above a bold title with a glowing left
+   accent bar, used consistently across every page header instead of a
+   plain <h1>. Reads as one deliberate system, not a generic dashboard. */
+.page-kicker {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--accent-blue);
+  margin-bottom: 2px;
+}
+
+.page-title {
+  position: relative;
+  padding-left: 14px;
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  letter-spacing: 0.01em;
+}
+
+.page-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  width: 3px;
+  border-radius: 2px;
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px var(--glow-blue);
+}
+
+.page-title-sm {
+  position: relative;
+  padding-left: 11px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.page-title-sm::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent-blue);
+  box-shadow: 0 0 6px var(--glow-blue);
+}
+
 /* ── Page fade-in ──────────────────────────────────────────── */
 .page-fade-in {
   animation: pageFadeIn 0.28s ease-out;
@@ -435,6 +869,78 @@ body {
   color: var(--text-primary) !important;
 }
 
+/* ── Command header (top nav bar shell) ──────────────────────── */
+.command-header {
+  height: 60px;
+  background: rgba(10, 17, 28, 0.88);
+  backdrop-filter: blur(14px) saturate(1.2);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  border-bottom: 1px solid var(--border);
+}
+
+.command-logo-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #023047 0%, #00d9ff 55%, #ffaa4c 100%);
+  animation: logoBreathe 3.4s ease-in-out infinite;
+}
+
+@keyframes logoBreathe {
+  0%, 100% { box-shadow: 0 0 14px rgba(0, 217, 255, 0.45); }
+  50% { box-shadow: 0 0 22px rgba(0, 217, 255, 0.7); }
+}
+
+.command-wordmark {
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  letter-spacing: 0.14em;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Live HH:MM:SS clock — a command-center reads as "watching in real time"
+   the instant it loads, before any data has arrived. Tabular-nums keeps
+   the digits from jittering the layout as they tick over. */
+.nav-clock {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-secondary);
+  letter-spacing: 0.06em;
+  padding: 4px 9px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: rgba(15, 24, 37, 0.6);
+}
+
+.nav-status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+
+.nav-status-pill.online {
+  color: var(--accent-green);
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.nav-status-pill.offline {
+  color: var(--accent-amber);
+  background: rgba(251, 191, 36, 0.12);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  animation: alertPulse 1.5s ease-in-out infinite;
+}
+
 /* ── Top nav pills ─────────────────────────────────────────── */
 .nav-item {
   position: relative;
@@ -442,7 +948,7 @@ body {
   align-items: center;
   gap: 8px;
   padding: 8px 14px;
-  border-radius: 9px;
+  border-radius: 9px 9px 0 0;
   color: var(--text-secondary);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -454,16 +960,31 @@ body {
 }
 
 .nav-item:hover {
-  background: rgba(0, 180, 216, 0.1);
+  background: rgba(0, 217, 255, 0.1);
   color: var(--accent-blue-light);
-  border-color: rgba(0, 180, 216, 0.25);
+  border-color: rgba(0, 217, 255, 0.25);
 }
 
+/* Active state reads as a genuine "selected tab" — a glowing underline
+   bar anchored to the bottom edge, rather than only a tinted background
+   (which was easy to miss at a glance). */
 .nav-item.active {
-  background: linear-gradient(135deg, rgba(0, 180, 216, 0.24) 0%, rgba(255, 170, 76, 0.14) 100%);
+  background: linear-gradient(135deg, rgba(0, 217, 255, 0.24) 0%, rgba(255, 170, 76, 0.14) 100%);
   color: var(--accent-blue-light);
-  border-color: rgba(0, 180, 216, 0.45);
-  box-shadow: inset 0 0 12px rgba(0, 180, 216, 0.12);
+  border-color: rgba(0, 217, 255, 0.45);
+  box-shadow: inset 0 0 12px rgba(0, 217, 255, 0.12);
+}
+
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px var(--glow-blue);
 }
 
 .nav-badge {
@@ -483,7 +1004,7 @@ body {
 
 /* ── Stat card ──────────────────────────────────────────────── */
 .stat-card {
-  background: linear-gradient(135deg, rgba(20, 28, 46, 0.85) 0%, rgba(6, 9, 15, 0.85) 100%);
+  background: linear-gradient(135deg, rgba(15, 24, 37, 0.85) 0%, rgba(7, 11, 18, 0.85) 100%);
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 20px;
@@ -491,16 +1012,28 @@ body {
 }
 
 .stat-card:hover {
-  border-color: rgba(0, 180, 216, 0.3);
+  border-color: rgba(0, 217, 255, 0.3);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transform: translateY(-1px);
 }
 
+/* Brief highlight when a stat's value just changed — a color-matched glow
+   that decays back to the resting state, so an update is felt, not just
+   read. --flash-color is set inline per-card to match that stat's icon. */
+.stat-card-flash {
+  animation: statFlash 0.7s ease-out;
+}
+
+@keyframes statFlash {
+  0% { box-shadow: 0 0 0 1px var(--flash-color, var(--accent-blue)), 0 0 24px 2px var(--flash-color, var(--accent-blue)); border-color: var(--flash-color, var(--accent-blue)); }
+  100% { box-shadow: none; border-color: var(--border); }
+}
+
 /* ── Input field ────────────────────────────────────────────── */
 .search-input {
-  background: rgba(6, 9, 15, 0.8);
+  background: rgba(7, 11, 18, 0.8);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 10px 16px;
   color: var(--text-primary);
   font-family: 'JetBrains Mono', monospace;
@@ -512,7 +1045,8 @@ body {
 
 .search-input:focus {
   border-color: var(--accent-blue);
-  box-shadow: 0 0 0 3px var(--glow-blue);
+  background: rgba(7, 11, 18, 0.95);
+  box-shadow: 0 0 0 3px var(--glow-blue), 0 0 22px rgba(0, 217, 255, 0.22);
 }
 
 .search-input::placeholder {
@@ -520,9 +1054,124 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+/* ── Search field wrapper — leading icon + animated scan sweep on focus ── */
+.search-field {
+  position: relative;
+  flex: 1;
+}
+
+.search-field .search-input {
+  padding-left: 38px;
+}
+
+.search-field-icon {
+  position: absolute;
+  left: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.2s ease;
+  z-index: 1;
+}
+
+.search-field:focus-within .search-field-icon {
+  color: var(--accent-blue);
+}
+
+/* A thin bright line sweeps left-to-right across the top edge while the
+   field is focused — a "scanning" cue that ties the search box back into
+   the radar/detection language used elsewhere (login page, loaders). */
+.search-field::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 8px;
+  right: 8px;
+  height: 1px;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+
+.search-field:focus-within::before {
+  opacity: 1;
+  background: linear-gradient(90deg, transparent 0%, var(--accent-blue) 50%, transparent 100%);
+  background-size: 60% 100%;
+  animation: searchScan 1.6s ease-in-out infinite;
+}
+
+@keyframes searchScan {
+  0% { background-position: -60% 0; }
+  100% { background-position: 160% 0; }
+}
+
+/* ── Search suggestions dropdown (Vehicle Search live plate lookup) ──── */
+.suggest-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  max-height: 280px;
+  overflow-y: auto;
+  background: rgba(10, 17, 28, 0.97);
+  backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(0, 217, 255, 0.08);
+  padding: 6px;
+  animation: pageFadeIn 0.15s ease-out;
+}
+
+.suggest-dropdown-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 8px 4px;
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.suggest-dropdown-empty {
+  display: flex;
+  justify-content: center;
+  padding: 14px;
+}
+
+.suggest-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 7px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s ease;
+}
+
+.suggest-row:hover,
+.suggest-row.active {
+  background: rgba(0, 217, 255, 0.1);
+}
+
+.suggest-row-count {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 /* ── Button ─────────────────────────────────────────────────── */
 .btn-primary {
-  background: linear-gradient(135deg, #00b4d8 0%, #023047 100%);
+  background: linear-gradient(135deg, #00d9ff 0%, #023047 100%);
   color: white;
   border: none;
   border-radius: 8px;
@@ -531,12 +1180,12 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 4px 12px rgba(0, 180, 216, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 217, 255, 0.3);
 }
 
 .btn-primary:hover {
   transform: translateY(-1px);
-  box-shadow: 0 6px 20px rgba(0, 180, 216, 0.4);
+  box-shadow: 0 6px 20px rgba(0, 217, 255, 0.4);
 }
 
 .btn-primary:active {
@@ -544,7 +1193,7 @@ body {
 }
 
 .btn-secondary {
-  background: rgba(20, 28, 46, 0.8);
+  background: rgba(15, 24, 37, 0.8);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -556,9 +1205,9 @@ body {
 }
 
 .btn-secondary:hover {
-  background: rgba(20, 28, 46, 1);
+  background: rgba(15, 24, 37, 1);
   color: var(--text-primary);
-  border-color: rgba(0, 180, 216, 0.3);
+  border-color: rgba(0, 217, 255, 0.3);
 }
 
 /* ── Alert row ──────────────────────────────────────────────── */
@@ -568,27 +1217,51 @@ body {
   gap: 12px;
   padding: 12px;
   border-radius: 8px;
-  background: rgba(230, 57, 70, 0.06);
-  border: 1px solid rgba(230, 57, 70, 0.2);
+  background: rgba(239, 68, 68, 0.06);
+  border: 1px solid rgba(239, 68, 68, 0.2);
   animation: fadeIn 0.3s ease-in-out;
   transition: all 0.2s ease;
 }
 
 .alert-row:hover {
-  background: rgba(230, 57, 70, 0.1);
+  background: rgba(239, 68, 68, 0.1);
 }
 
 .alert-row.resolved {
   opacity: 0.5;
-  background: rgba(20, 28, 46, 0.4);
+  background: rgba(15, 24, 37, 0.4);
   border-color: var(--border);
+}
+
+/* A genuinely new alert that just arrived over the WebSocket — a bright
+   flash that settles into the normal alert-row styling over ~4s, so a live
+   detection reads as an event, not a silent list insert. */
+.alert-row-new {
+  animation: alertRowArrive 4s ease-out;
+}
+
+@keyframes alertRowArrive {
+  0% {
+    background: rgba(239, 68, 68, 0.28);
+    border-color: var(--accent-red);
+    box-shadow: 0 0 0 1px var(--accent-red), 0 0 20px rgba(239, 68, 68, 0.45);
+    transform: translateX(0);
+  }
+  8% { transform: translateX(-3px); }
+  16% { transform: translateX(2px); }
+  24% { transform: translateX(0); }
+  100% {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.2);
+    box-shadow: none;
+  }
 }
 
 /* ── Loading spinner ────────────────────────────────────────── */
 .spinner {
   width: 20px;
   height: 20px;
-  border: 2px solid rgba(0, 180, 216, 0.2);
+  border: 2px solid rgba(0, 217, 255, 0.2);
   border-top-color: var(--accent-blue);
   border-radius: 50%;
   animation: spin 0.7s linear infinite;
@@ -609,8 +1282,29 @@ body {
   font-weight: 500;
 }
 
-.tag-blue { background: rgba(0, 180, 216, 0.15); color: var(--accent-blue-light); border: 1px solid rgba(0, 180, 216, 0.3); }
-.tag-red { background: rgba(230, 57, 70, 0.15); color: #ff8a94; border: 1px solid rgba(230, 57, 70, 0.3); }
+.tag-blue { background: rgba(0, 217, 255, 0.15); color: var(--accent-blue-light); border: 1px solid rgba(0, 217, 255, 0.3); }
+.tag-red { background: rgba(239, 68, 68, 0.15); color: #ff8a94; border: 1px solid rgba(239, 68, 68, 0.3); }
 .tag-green { background: rgba(34, 197, 94, 0.15); color: #86efac; border: 1px solid rgba(34, 197, 94, 0.3); }
 .tag-amber { background: rgba(251, 191, 36, 0.15); color: #fde68a; border: 1px solid rgba(251, 191, 36, 0.3); }
 .tag-gray { background: rgba(100, 116, 139, 0.15); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.3); }
+
+/* ── Route Timeline (Vehicle Search sidebar) ────────────────────────────── */
+.timeline-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.04);
+}
+
+.timeline-dot-current {
+  box-shadow: 0 0 0 2px #ffffff, 0 0 8px rgba(255, 255, 255, 0.5);
+}
+
+.timeline-dot-line {
+  width: 2px;
+  flex: 1;
+  min-height: 14px;
+  background: var(--border);
+}

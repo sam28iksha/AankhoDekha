@@ -1,13 +1,30 @@
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useState, useCallback, useEffect } from 'react'
 import {
-  Map, Search, BarChart3, Bell, Eye, Ban, ScanLine,
+  Map, Search, BarChart3, Bell, Ban, ScanLine,
   Wifi, WifiOff, ClipboardList, UserCog, LogOut,
 } from 'lucide-react'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
 import { useAuth, hasRole } from '../lib/auth'
 import Toast from './Toast'
 import ErrorBoundary from './ErrorBoundary'
+import Logomark from './Logomark'
+
+// Command-center touch — a live clock reinforces "this is a monitoring
+// system watching in real time" the moment the header loads, before any
+// data has even arrived.
+function LiveClock() {
+  const [now, setNow] = useState(() => new Date())
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+  return (
+    <span className="nav-clock" id="nav-live-clock">
+      {now.toLocaleTimeString('en-GB', { hour12: false })}
+    </span>
+  )
+}
 
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Live Map', icon: Map, id: 'nav-dashboard' },
@@ -43,23 +60,15 @@ export default function Layout() {
   return (
     <div className="flex h-screen w-screen flex-col overflow-hidden">
       {/* ── Top nav bar ──────────────────────────────────────── */}
-      <header
-        className="flex items-center gap-4 px-4 flex-shrink-0"
-        style={{ background: 'var(--bg-secondary)', height: '56px' }}
-      >
+      <header className="command-header flex items-center gap-4 px-4 flex-shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-2.5 flex-shrink-0">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg, #023047 0%, #00b4d8 55%, #ffaa4c 100%)', boxShadow: '0 0 14px rgba(0,180,216,0.45)' }}
-          >
-            <Eye size={16} color="white" />
+          <div className="command-logo-badge">
+            <Logomark size={16} color="white" />
           </div>
           <div className="hidden sm:block leading-tight">
-            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
-              NAGARNETRA
-            </div>
-            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
+            <div className="command-wordmark">NAGARNETRA</div>
+            <div className="text-[10px]" style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}>THE EYE OF THE CITY</div>
           </div>
         </div>
 
@@ -94,12 +103,13 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* WS status + user + logout */}
-        <div className="flex items-center gap-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
+        {/* Live clock + WS status + user + logout */}
+        <div className="flex items-center gap-3 flex-shrink-0">
+          <LiveClock />
+          <div className={`nav-status-pill ${connected ? 'online' : 'offline'}`}>
             {connected
-              ? <><Wifi size={14} style={{ color: 'var(--accent-green)' }} /><span className="text-xs hidden md:inline" style={{ color: 'var(--accent-green)' }}>Live</span></>
-              : <><WifiOff size={14} style={{ color: 'var(--accent-amber)' }} /><span className="text-xs hidden md:inline" style={{ color: 'var(--accent-amber)' }}>Reconnecting…</span></>
+              ? <><Wifi size={13} /><span className="hidden md:inline">LIVE</span></>
+              : <><WifiOff size={13} /><span className="hidden md:inline">RECONNECTING</span></>
             }
           </div>
           <div className="hidden lg:block text-right leading-tight">
