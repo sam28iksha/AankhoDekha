@@ -54,7 +54,8 @@ class PlateEvent(Base):
     confidence = Column(Float, nullable=False, default=0.0)
     frame_snapshot_path = Column(String(500), nullable=True)
 
-    camera = relationship("Camera", back_populates="events", lazy="joined")
+    # CHANGE THIS LINE from "joined" to "select"
+    camera = relationship("Camera", back_populates="events", lazy="select")
 
     __table_args__ = (
         Index("ix_plate_camera_ts", "plate_number", "camera_id", "timestamp"),

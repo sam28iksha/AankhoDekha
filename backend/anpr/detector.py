@@ -2,15 +2,7 @@
 NAGARNETRA — YOLOv8 License Plate Detector
 Wraps Ultralytics YOLOv8 for plate bounding-box detection.
 
-Model resolution order:
-  1. YOLO_WEIGHTS_PATH (custom/fine-tuned ANPR model)  <-- drop best.pt here
-  2. HuggingFace Hub: keremberke/license-plate-detection (auto-download, ~50 MB)
-  3. yolov8n.pt (generic COCO pretrained, last resort — lower accuracy)
-
-To use your own fine-tuned model, set YOLO_WEIGHTS_PATH in .env.
-
-Note: requires ultralytics>=8.3.0 for PyTorch 2.6 compatibility
-(torch.load weights_only=False is handled internally by ultralytics 8.3.0+).
+Requires custom fine-tuned weights (best.pt) to be present at settings.YOLO_WEIGHTS_PATH.
 """
 from __future__ import annotations
 
@@ -20,6 +12,7 @@ from pathlib import Path
 from typing import List
 
 import numpy as np
+import torch
 
 from config import settings
 
@@ -45,6 +38,8 @@ class PlateDetector:
 
     def __init__(self):
         self._model = None
+        # Dynamically detect if a GPU is available for faster inference
+        self._device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def _load_model(self):
         """Load model — called once on first detection."""
@@ -52,35 +47,20 @@ class PlateDetector:
 
         weights_path = Path(settings.YOLO_WEIGHTS_PATH)
 
-        if weights_path.exists():
-            logger.info(f"Loading custom ANPR weights: {weights_path}")
-            model = YOLO(str(weights_path))
-        else:
-            # Tier 2: download plate-specific model from HuggingFace Hub.
-            # keremberke/license-plate-detection is a YOLOv8m fine-tuned on
-            # ~25 k license plate images — meaningfully better than generic COCO.
-            # huggingface_hub is already a transitive dep of ultralytics.
-            try:
-                from huggingface_hub import hf_hub_download
-                logger.info(
-                    "Custom weights not found. Downloading from HuggingFace Hub: "
-                    "keremberke/license-plate-detection / yolov8m-license-plate.pt"
-                )
-                local_path = hf_hub_download(
-                    repo_id="keremberke/license-plate-detection",
-                    filename="yolov8m-license-plate.pt",
-                )
-                model = YOLO(local_path)
-                logger.info("HuggingFace Hub ANPR model loaded successfully.")
-            except Exception as hub_err:
-                logger.warning(
-                    f"Hub model unavailable ({hub_err}). "
-                    "Falling back to yolov8n.pt (generic COCO). "
-                    "Accuracy will be lower — drop a fine-tuned ANPR best.pt for production."
-                )
-                model = YOLO("yolov8n.pt")
+        if not weights_path.exists():
+            error_msg = (
+                f"Custom ANPR weights not found at {weights_path}. "
+                "The license-plate detector requires best.pt."
+            )
+            logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
 
-        self._model = model
+        logger.info(
+            f"Loading custom ANPR weights: {weights_path} "
+            f"onto device: {self._device}"
+        )
+
+        self._model = YOLO(str(weights_path))
         logger.info("Plate detector ready.")
 
     def detect(
@@ -102,7 +82,7 @@ class PlateDetector:
             frame,
             conf=threshold,
             verbose=False,
-            device="cpu",  # explicit CPU for portability; change to "cuda" for GPU
+            device=self._device, 
         )
 
         detections: List[PlateDetection] = []
