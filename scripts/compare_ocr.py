@@ -46,7 +46,10 @@ from paddleocr import PaddleOCR
 
 from anpr.frame_source import VideoFileSource
 from anpr.detector import plate_detector
-from anpr.ocr import _preprocess_crop, _normalize_plate, _validate_plate, _correct_plate_confusions
+from anpr.ocr import (
+    _preprocess_crop, _normalize_plate, _validate_plate,
+    _correct_plate_confusions, _correct_missing_district_zero,
+)
 from config import settings
 
 
@@ -128,13 +131,17 @@ async def main(args: argparse.Namespace) -> None:
             e_norm = _normalize_plate(e_text_raw)
 
             # Mirrors what PlateOCR.read() now does in production: only try
-            # confusion-correction if the raw normalized read doesn't already
-            # validate, and only keep the correction if it does.
+            # confusion-correction / missing-zero recovery if the raw
+            # normalized read doesn't already validate, and only keep a
+            # correction if it does.
             p_final = p_norm
             if p_norm and not _validate_plate(p_final):
                 p_corrected = _correct_plate_confusions(p_norm)
+                p_zero_corrected = _correct_missing_district_zero(p_norm)
                 if p_corrected != p_norm and _validate_plate(p_corrected):
                     p_final = p_corrected
+                elif p_zero_corrected != p_norm and _validate_plate(p_zero_corrected):
+                    p_final = p_zero_corrected
             p_valid = bool(p_final) and _validate_plate(p_final)
             e_valid = _validate_plate(e_norm)
 
