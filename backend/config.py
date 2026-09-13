@@ -78,6 +78,10 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 480  # one working shift
 
+    ANOMALY_SPEED_THRESHOLD_KMH: float = 120.0
+    ANOMALY_LOOKBACK_HOURS: int = 6
+    ANOMALY_MIN_DISTANCE_KM: float = 0.5
+
     # Bootstrap account — seeded once if the users table is empty. Change
     # the password after first login; this only exists to solve "how do I
     # log in the first time."

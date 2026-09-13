@@ -17,6 +17,7 @@ from db.models import Camera, Blacklist, User
 from config import settings
 from auth.security import hash_password
 
+
 logger = logging.getLogger(__name__)
 
 
