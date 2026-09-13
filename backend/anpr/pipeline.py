@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import AsyncIterator, Optional
+from anpr.ocr import plate_ocr, _validate_plate
 
 import cv2
 import numpy as np
@@ -19,7 +20,6 @@ import numpy as np
 from config import settings
 from anpr.frame_source import FrameSource
 from anpr.detector import plate_detector, vehicle_detector, PlateDetection, VehicleDetection
-from anpr.ocr import plate_ocr
 from time import perf_counter
 from utils.metrics import metrics
 
@@ -122,7 +122,7 @@ class _PlateCluster:
         if len(self.reads) == 1:
             return self.reads[0]
 
-        # Resolve Plate String
+        # 1. Resolve Plate String via Confidence-Weighted Character Voting
         length_weight: dict[int, float] = {}
         for r in self.reads:
             length_weight[len(r[0])] = length_weight.get(len(r[0]), 0.0) + r[1]
@@ -135,9 +135,20 @@ class _PlateCluster:
             for r in candidates:
                 tally[r[0][i]] = tally.get(r[0][i], 0.0) + r[1]
             chars.append(max(tally, key=lambda ch: tally[ch]))
-        canonical_plate = "".join(chars)
+        voted_plate = "".join(chars)
 
-        # Resolve Vehicle Attributes (Majority Vote)
+        
+               # 2. Strict Safety Gate: Validate the voted canonical string.
+        valid_reads = [r for r in self.reads if _validate_plate(r[0])]
+
+        if _validate_plate(voted_plate):
+            canonical_plate = voted_plate
+        elif valid_reads:
+            canonical_plate = max(valid_reads, key=lambda r: r[1])[0]
+        else:
+            raise ValueError("Plate cluster contains no valid reads")
+
+        # 3. Resolve Vehicle Attributes (Majority Vote)
         type_tally: dict[str, int] = {}
         color_tally: dict[str, int] = {}
         
@@ -241,6 +252,7 @@ class ANPRPipeline:
                 v_type, color = _associate_vehicle(det, vehicle_dets)
 
                 metrics.increment("ocr_attempts")
+
                 
                 # --- Protected PaddleOCR Read ---
                 async with _ML_SEMAPHORE:
@@ -259,7 +271,7 @@ class ANPRPipeline:
                     logger.debug(f"Low OCR conf {ocr_conf:.2f} for plate '{plate_text}', skipping.")
                     continue
 
-                metrics.increment("ocr_success")
+                metrics.record_ocr_success(ocr_conf)
                 combined_conf = (det.confidence * ocr_conf) ** 0.5
 
                 snapshot_path = None

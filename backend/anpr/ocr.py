@@ -244,6 +244,7 @@ class PlateOCR:
 
         try:
             results = self._ocr.ocr(crop, cls=True)
+            logger.warning(f"OCR RAW RESULT: {results}")
         except Exception as e:
             logger.warning(f"PaddleOCR error: {e}")
             return "", 0.0

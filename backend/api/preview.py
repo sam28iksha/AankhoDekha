@@ -451,10 +451,7 @@ async def _render_preview(
                 if not is_success:
                     continue
 
-                metrics.increment(
-                    "ocr_success",
-                    1,
-                )
+                metrics.record_ocr_success(ocr_conf)
 
                 metrics.increment(
                     "plates_detected",
