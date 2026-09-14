@@ -26,6 +26,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 from geoalchemy2 import Geometry
 
+from config import settings
 from db.base import Base
 
 
@@ -113,15 +114,20 @@ class Camera(Base):
     # --------------------------------------------------------
     # PostGIS spatial point
     # SRID 4326 = WGS 84 latitude/longitude
+    # Only defined under Postgres — GeoAlchemy2's Geometry type generates
+    # PostGIS/Spatialite-only SQL (e.g. AsEWKB), which plain SQLite has no
+    # equivalent for. Skipping the column entirely under SQLite means it's
+    # never part of the mapped columns, so no query ever selects it.
     # --------------------------------------------------------
 
-    geom = Column(
-        Geometry(
-            geometry_type="POINT",
-            srid=4326,
-        ),
-        nullable=True,
-    )
+    if settings.DB_MODE == "postgres":
+        geom = Column(
+            Geometry(
+                geometry_type="POINT",
+                srid=4326,
+            ),
+            nullable=True,
+        )
 
     events = relationship(
         "PlateEvent",
@@ -129,13 +135,10 @@ class Camera(Base):
         lazy="selectin",
     )
 
-    __table_args__ = (
-        Index(
-            "idx_cameras_geom",
-            "geom",
-            postgresql_using="gist",
-        ),
-    )
+    # No manual __table_args__ index here: GeoAlchemy2's Geometry type
+    # already auto-creates its own GIST index on this column by default
+    # (named identically, idx_cameras_geom) — an explicit duplicate here
+    # collides with it (DuplicateTableError) on every fresh create_all().
 
 
 # ============================================================
