@@ -43,7 +43,7 @@ export function SystemHealthWidget() {
 
   return (
     <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 text-white text-sm shadow-lg">
-      
+
       {/* -------------------------------------------------- */}
       {/* Header */}
       {/* -------------------------------------------------- */}
@@ -73,14 +73,6 @@ export function SystemHealthWidget() {
           </div>
         </div>
 
-        {/* OCR Success */}
-        <div className="bg-gray-800 p-2 rounded">
-          <div>OCR Success Rate</div>
-          <div className="text-lg font-bold text-green-400">
-            {metrics.anpr.ocr_success_rate}%
-          </div>
-        </div>
-
         {/* Active Cameras */}
         <div className="bg-gray-800 p-2 rounded">
           <div>Active Cameras (30s)</div>
@@ -89,11 +81,41 @@ export function SystemHealthWidget() {
           </div>
         </div>
 
+        {/* OCR Success Rate */}
+        <div
+          className="bg-gray-800 p-2 rounded"
+          title="Percentage of OCR attempts producing accepted reads"
+        >
+          <div>OCR Success Rate</div>
+          <div className="text-lg font-bold text-green-400">
+            {metrics.anpr.ocr_success_rate}%
+          </div>
+        </div>
+
+        {/* Accepted Read Confidence */}
+        <div
+          className="bg-gray-800 p-2 rounded"
+          title="Average PaddleOCR confidence of accepted plate reads"
+        >
+          <div>Read Confidence</div>
+          <div className="text-lg font-bold text-emerald-400">
+            {metrics.anpr.accepted_read_confidence}%
+          </div>
+        </div>
+
         {/* Events */}
         <div className="bg-gray-800 p-2 rounded">
           <div>Events Persisted</div>
           <div className="text-lg font-bold text-purple-400">
             {metrics.anpr.events_persisted}
+          </div>
+        </div>
+
+        {/* Plates Detected */}
+        <div className="bg-gray-800 p-2 rounded">
+          <div>YOLO Detections</div>
+          <div className="text-lg font-bold text-blue-400">
+            {metrics.anpr.plates_detected}
           </div>
         </div>
 
@@ -122,6 +144,9 @@ export function SystemHealthWidget() {
         </span>
 
       </div>
+
     </div>
   );
 }
+
+
