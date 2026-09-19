@@ -86,7 +86,7 @@ export default function UserManagement() {
               {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
             </select>
           </div>
-          {error && <div className="text-xs mt-2" style={{ color: '#ff8a94' }}>{error}</div>}
+          {error && <div className="text-xs mt-2" style={{ color: 'var(--accent-critical)' }}>{error}</div>}
           <button
             className="btn-primary flex items-center gap-2 mt-3"
             onClick={handleCreate}
@@ -108,7 +108,7 @@ export default function UserManagement() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['Username', 'Full Name', 'Role', 'Created', 'Status', ''].map(h => (
                     <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
@@ -116,7 +116,7 @@ export default function UserManagement() {
               </thead>
               <tbody>
                 {users.map(u => (
-                  <tr key={u.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr key={u.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td className="px-5 py-3 font-mono text-xs" style={{ color: 'var(--text-primary)' }}>{u.username}</td>
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{u.full_name || '—'}</td>
                     <td className="px-5 py-3">

@@ -165,7 +165,7 @@ export default function BlacklistView() {
                 onChange={e => setReason(e.target.value)}
               />
               {error && (
-                <div className="text-xs" style={{ color: '#ff8a94' }}>{error}</div>
+                <div className="text-xs" style={{ color: 'var(--accent-critical)' }}>{error}</div>
               )}
               <button
                 id="blacklist-add-btn"
@@ -191,7 +191,7 @@ export default function BlacklistView() {
             <>
             <div
               className="flex flex-col items-center justify-center gap-2 p-6 rounded-lg cursor-pointer transition-colors"
-              style={{ border: '1.5px dashed var(--border)', background: 'rgba(20,28,46,0.5)' }}
+              style={{ border: '1.5px dashed var(--border)', background: 'var(--bg-input)' }}
               onClick={() => fileInputRef.current?.click()}
             >
               <input
@@ -227,7 +227,7 @@ export default function BlacklistView() {
             </button>
 
             {uploadError && (
-              <div className="text-xs mt-3" style={{ color: '#ff8a94' }}>{uploadError}</div>
+              <div className="text-xs mt-3" style={{ color: 'var(--accent-critical)' }}>{uploadError}</div>
             )}
 
             {uploadResult && (
@@ -239,7 +239,7 @@ export default function BlacklistView() {
                       Done — {videoStatus.events_written ?? 0} plate event(s) processed. Any blacklist match already fired as a live alert — check the Alerts page.
                     </div>
                   ) : videoStatus?.status === 'error' ? (
-                    <div className="text-xs p-3 rounded flex items-center gap-2" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: '#ff8a94' }}>
+                    <div className="text-xs p-3 rounded flex items-center gap-2" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: 'var(--accent-critical)' }}>
                       <AlertTriangle size={13} />
                       Processing failed{videoStatus.errors?.length ? `: ${videoStatus.errors[0]}` : '.'}
                     </div>
@@ -293,7 +293,7 @@ export default function BlacklistView() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['Plate', 'Reason', 'Added', 'Alerts', ''].map(h => (
                     <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
@@ -301,7 +301,7 @@ export default function BlacklistView() {
               </thead>
               <tbody>
                 {entries.map(e => (
-                  <tr key={e.plate_number} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr key={e.plate_number} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td className="px-5 py-3"><span className="plate-badge blacklisted" style={{ fontSize: '0.75rem' }}>{e.plate_number}</span></td>
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{e.reason || '—'}</td>
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(e.added_at), 'dd MMM yyyy HH:mm')}</td>

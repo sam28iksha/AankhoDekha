@@ -18,7 +18,7 @@ function ScoreBar({ score }: { score: number }) {
   const pct = Math.min(score / 3, 1) * 100
   const color = score >= 2 ? 'var(--accent-red)' : score >= 1.5 ? 'var(--accent-amber)' : 'var(--accent-green)'
   return (
-    <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-card)' }}>
+    <div className="w-24 h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-secondary)' }}>
       <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 999, transition: 'width 0.5s ease' }} />
     </div>
   )
@@ -138,7 +138,7 @@ export default function Analytics() {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={trendData} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
                 <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                 <Tooltip
@@ -161,7 +161,7 @@ export default function Analytics() {
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={density} margin={{ top: 0, right: 20, left: 0, bottom: 60 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="camera_name"
                   tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
@@ -194,7 +194,7 @@ export default function Analytics() {
             ) : (
               <div className="flex flex-col gap-2">
                 {topFlows.map((f, i) => (
-                  <div key={i} className="flex items-center gap-3 p-2 rounded" style={{ background: 'rgba(20,28,46,0.55)' }}>
+                  <div key={i} className="flex items-center gap-3 p-2 rounded" style={{ background: 'var(--bg-input)' }}>
                     <span className="text-xs w-4 text-center font-bold" style={{ color: 'var(--text-muted)' }}>{i + 1}</span>
                     <div className="flex-1 min-w-0 flex items-center gap-2 text-xs">
                       <span className="truncate" style={{ color: 'var(--text-secondary)' }}>{cameraNames[f.origin] || f.origin}</span>
@@ -224,7 +224,7 @@ export default function Analytics() {
                   speed: s.avg_speed_kmh,
                   n: s.sample_count,
                 }))} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                   <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} unit=" km/h" />
                   <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} width={60} />
                   <Tooltip
@@ -257,7 +257,7 @@ export default function Analytics() {
                 {congestion.length === 0 ? (
                   <tr><td colSpan={6} className="text-center py-6" style={{ color: 'var(--text-muted)' }}>No data yet.</td></tr>
                 ) : congestion.map(c => (
-                  <tr key={c.camera_id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr key={c.camera_id} style={{ borderBottom: "1px solid var(--border)" }}>
                     <td className="py-2 pr-4 font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{c.camera_name}</td>
                     <td className="py-2 pr-4 text-xs" style={{ color: 'var(--text-muted)' }}>{c.road_segment || '—'}</td>
                     <td className="py-2 pr-4 font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{c.current_events}</td>

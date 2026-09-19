@@ -4,8 +4,9 @@ import MapView from '../components/MapView'
 import StatCard from '../components/StatCard'
 import { useAlertWebSocket, WSMessage } from '../lib/ws'
 import type { SimStats, SelectedVehicleInfo } from '../components/TrafficSimulation'
+import { useCachedFetch } from '../lib/cache'
 import {
-  getSummary, getDensity, getAlerts, getBlacklist,
+  getSummary, getDensity, getAlerts, getBlacklist, getCameras,
   type Summary, type DensityEntry, type AlertEntry
 } from '../lib/api'
 import { formatDistanceToNow } from 'date-fns'
@@ -15,22 +16,35 @@ const VEHICLE_KIND_LABEL: Record<SelectedVehicleInfo['kind'], string> = {
   blacklisted: 'Blacklisted vehicle',
   suspicious: 'Suspicious pattern',
 }
+// 'normal' matches the vehicle marker's own muted-green fill on the map
+// (#3F7050) rather than the old cyan — cyan is reserved for camera/AI
+// infrastructure, not vehicles.
 const VEHICLE_KIND_COLOR: Record<SelectedVehicleInfo['kind'], string> = {
-  normal: 'var(--accent-blue-light)',
+  normal: '#3F7050',
   blacklisted: 'var(--accent-red)',
   suspicious: 'var(--accent-amber)',
 }
 
+// Color-coded by real alert type — a blacklist hit is genuinely critical
+// (red), a route anomaly is a lower-severity heads-up (amber); showing
+// every event as red would make the feed cry wolf and bury the actual
+// blacklist hits among routine anomaly flags.
 function LiveAlertItem({ alert, isNew }: { alert: WSMessage; isNew?: boolean }) {
+  const isBlacklist = alert.alert_type === 'blacklist_hit'
+  const color = isBlacklist ? 'var(--accent-red)' : 'var(--accent-amber)'
+  const arriveClass = isNew ? (isBlacklist ? ' alert-row-new' : ' alert-row-new-amber') : ''
   return (
-    <div className={`alert-row animate-fade-in${isNew ? ' alert-row-new' : ''}`}>
+    <div
+      className={`alert-row animate-fade-in${arriveClass}`}
+      style={isBlacklist ? undefined : { background: 'rgba(255, 176, 32, 0.06)', borderColor: 'rgba(255, 176, 32, 0.22)' }}
+    >
       <div className="mt-0.5">
-        <AlertTriangle size={14} style={{ color: 'var(--accent-red)' }} />
+        <AlertTriangle size={14} style={{ color }} />
       </div>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="plate-badge blacklisted text-xs">{alert.plate_number}</span>
-          <span className="tag tag-red">{alert.alert_type?.replace('_', ' ')}</span>
+          <span className={`plate-badge text-xs${isBlacklist ? ' blacklisted' : ''}`}>{alert.plate_number}</span>
+          <span className={`tag ${isBlacklist ? 'tag-red' : 'tag-amber'}`}>{alert.alert_type?.replace('_', ' ')}</span>
         </div>
         <div className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{alert.camera_name}</div>
         <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
@@ -42,6 +56,10 @@ function LiveAlertItem({ alert, isNew }: { alert: WSMessage; isNew?: boolean }) 
 }
 
 export default function Dashboard() {
+  // Shares MapView's own 'map:cameras' cache entry (same key, same TTL) —
+  // just reads the camera count for the live-simulation stat card, no
+  // extra network request in practice.
+  const { data: cameras } = useCachedFetch('map:cameras', getCameras, 30000)
   const [summary, setSummary] = useState<Summary | null>(null)
   const [density, setDensity] = useState<DensityEntry[]>([])
   const [pastAlerts, setPastAlerts] = useState<AlertEntry[]>([])
@@ -152,7 +170,8 @@ export default function Dashboard() {
           onSimSelectVehicle={handleSimSelectVehicle}
           onSimSelectedVehicleTick={handleSimSelectedVehicleTick}
           simFollowing={simFollowing}
-          basemapStyle="satellite-green"
+          basemapStyle="default"
+          lightBasemap
         />
 
         {/* Simulation toggle — bottom-left, out of the way of stat cards
@@ -229,7 +248,7 @@ export default function Dashboard() {
           <button
             id="refresh-alerts"
             onClick={fetchData}
-            className="p-1.5 rounded hover:bg-white/5 transition-colors"
+            className="p-1.5 rounded hover:bg-[var(--bg-card-hover)] transition-colors"
             style={{ color: 'var(--text-muted)' }}
           >
             <RefreshCw size={14} />
@@ -260,21 +279,25 @@ export default function Dashboard() {
         {simActive && (
           <div className="p-3 flex flex-col gap-3" style={{ borderTop: '1px solid var(--border)' }}>
             <div className="flex items-center gap-2">
-              <Radar size={13} style={{ color: 'var(--accent-blue-light)' }} className="animate-spin-slow" />
+              <Radar size={13} style={{ color: 'var(--brand)' }} className="animate-spin-slow" />
               <span className="text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>LIVE SIMULATION</span>
             </div>
-            <div className="grid grid-cols-3 gap-2 text-center">
-              <div>
-                <div className="text-lg font-bold font-mono" style={{ color: 'var(--text-primary)' }}>{simStats?.active ?? 0}</div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>vehicles</div>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div className="sim-stat-card">
+                <div className="sim-stat-value">{simStats?.active ?? 0}</div>
+                <div className="sim-stat-label">Vehicles</div>
               </div>
-              <div>
-                <div className="text-lg font-bold font-mono" style={{ color: 'var(--accent-red)' }}>{simStats?.blacklisted ?? 0}</div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>blacklisted</div>
+              <div className="sim-stat-card">
+                <div className="sim-stat-value">{cameras?.length ?? 0}</div>
+                <div className="sim-stat-label">Active Cameras</div>
               </div>
-              <div>
-                <div className="text-lg font-bold font-mono" style={{ color: 'var(--accent-amber)' }}>{simStats?.suspicious ?? 0}</div>
-                <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>suspicious</div>
+              <div className="sim-stat-card">
+                <div className="sim-stat-value" style={{ color: '#FFB020' }}>{simStats?.suspicious ?? 0}</div>
+                <div className="sim-stat-label">Suspicious</div>
+              </div>
+              <div className="sim-stat-card">
+                <div className="sim-stat-value" style={{ color: '#E63946' }}>{simStats?.blacklisted ?? 0}</div>
+                <div className="sim-stat-label">Blacklisted</div>
               </div>
             </div>
 
@@ -288,7 +311,7 @@ export default function Dashboard() {
                   <button
                     id="sim-stop-tracking-btn"
                     onClick={() => { setSimSelected(null); setSimFollowing(false) }}
-                    className="p-0.5 rounded hover:bg-white/10 transition-colors"
+                    className="p-0.5 rounded hover:bg-[var(--bg-card-hover)] transition-colors"
                     style={{ color: 'var(--text-muted)' }}
                   >
                     <X size={13} />
@@ -299,7 +322,7 @@ export default function Dashboard() {
                 <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
                   {simSelected.fromCamera} → {simSelected.toCamera}
                 </div>
-                <div className="mt-2" style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div className="mt-2" style={{ height: 3, borderRadius: 2, background: 'var(--bg-secondary)', overflow: 'hidden' }}>
                   <div style={{ height: '100%', width: `${simSelected.progressPct}%`, background: VEHICLE_KIND_COLOR[simSelected.kind], transition: 'width 0.2s linear' }} />
                 </div>
                 <button

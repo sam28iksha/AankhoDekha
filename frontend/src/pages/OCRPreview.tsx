@@ -159,7 +159,7 @@ export default function OCRPreview() {
               </span>
             )}
             {status.status === 'error' && (
-              <span className="text-xs flex items-center gap-1" style={{ color: '#ff8a94' }}>
+              <span className="text-xs flex items-center gap-1" style={{ color: 'var(--accent-critical)' }}>
                 <AlertTriangle size={12} /> {status.error || 'Render failed'}
               </span>
             )}
@@ -269,8 +269,8 @@ export default function OCRPreview() {
                     <button
                       key={i}
                       onClick={() => jumpToTime(p.t)}
-                      className="flex items-center justify-between p-2 rounded text-left transition-colors hover:bg-white/5"
-                      style={{ border: '1px solid var(--border)', background: 'rgba(20,28,46,0.5)' }}
+                      className="flex items-center justify-between p-2 rounded text-left transition-colors hover:bg-[var(--bg-card-hover)]"
+                      style={{ border: '1px solid var(--border)', background: 'var(--bg-input)' }}
                     >
                       <span className="plate-badge" style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{p.plate}</span>
                       <span className="text-xs flex items-center gap-1" style={{ color: 'var(--accent-green)' }}>

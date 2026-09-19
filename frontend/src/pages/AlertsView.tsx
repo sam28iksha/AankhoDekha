@@ -15,7 +15,7 @@ function AlertTypeBadge({ type }: { type: string }) {
 
 function SourceBadge({ source }: { source: string }) {
   return source === 'simulated'
-    ? <span className="tag" style={{ background: 'rgba(148,163,184,0.15)', color: '#94a3b8' }}>🎬 Simulated</span>
+    ? <span className="tag tag-gray">🎬 Simulated</span>
     : <span className="tag tag-green">🎥 Live Detection</span>
 }
 
@@ -178,19 +178,19 @@ export default function AlertsView() {
           <div className="glass-card overflow-hidden" id="alerts-table">
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['#', 'Plate', 'Camera', 'Type', 'Source', 'Time', 'Details', 'Status', 'Action'].map(h => (
                     <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {alerts.map((alert, i) => (
+                {alerts.map((alert) => (
                   <tr
                     key={alert.id}
-                    className={`transition-colors ${alert.resolved ? '' : 'hover:bg-white/3'}`}
+                    className={`transition-colors ${alert.resolved ? '' : 'hover:bg-[var(--bg-card-hover)]'}`}
                     style={{
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      borderBottom: '1px solid var(--border)',
                       opacity: alert.resolved ? 0.55 : 1,
                     }}
                   >

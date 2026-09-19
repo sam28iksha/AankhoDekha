@@ -1,27 +1,15 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import {
   Search, AlertTriangle, Navigation, Gauge, Route, GitCommitHorizontal, Radar,
-  Crosshair, X, ShieldAlert, Eye, Play, Pause, Car, ArrowRight,
+  Play, Pause, Car, ArrowRight,
 } from 'lucide-react'
 import MapView, { type LegStatus, LEG_STATUS_COLOR } from '../components/MapView'
 import RadarLoader from '../components/RadarLoader'
-import type { SimStats, SelectedVehicleInfo } from '../components/TrafficSimulation'
 import {
-  getVehicleHistory, searchPlates, getTopPlates, getBlacklist, getAlerts, type VehicleHistory, type PlateEvent,
+  getVehicleHistory, searchPlates, getTopPlates, getAlerts, type VehicleHistory, type PlateEvent,
   type TrajectoryLeg, type PlateSearchResult, type AlertEntry,
 } from '../lib/api'
 import { format } from 'date-fns'
-
-const VEHICLE_KIND_LABEL: Record<SelectedVehicleInfo['kind'], string> = {
-  normal: 'Normal traffic',
-  blacklisted: 'Blacklisted vehicle',
-  suspicious: 'Suspicious pattern',
-}
-const VEHICLE_KIND_COLOR: Record<SelectedVehicleInfo['kind'], string> = {
-  normal: 'var(--accent-blue-light)',
-  blacklisted: 'var(--accent-red)',
-  suspicious: 'var(--accent-amber)',
-}
 
 // A real alert is matched to the sighting at the same camera within this
 // window — alerts fire at (or a few seconds after) the detection event, not
@@ -112,31 +100,6 @@ export default function VehicleSearch() {
   const [error, setError] = useState<string | null>(null)
   const [scrubberIndex, setScrubberIndex] = useState(0)
   const [showRoutes, setShowRoutes] = useState(false)
-
-  // ── Background traffic simulation — same client-side layer as the
-  // Dashboard's Live Map (see TrafficSimulation.tsx), reused here as-is so
-  // the searched vehicle's highlighted trajectory reads against a living
-  // city instead of a static map. ───────────────────────────────────────
-  const [simActive, setSimActive] = useState(false)
-  const [simStats, setSimStats] = useState<SimStats | null>(null)
-  const [simSelected, setSimSelected] = useState<SelectedVehicleInfo | null>(null)
-  const [simFollowing, setSimFollowing] = useState(false)
-  const [blacklistPlates, setBlacklistPlates] = useState<string[]>([])
-
-  useEffect(() => {
-    if (simActive && blacklistPlates.length === 0) {
-      getBlacklist().then(entries => setBlacklistPlates(entries.map(e => e.plate_number))).catch(() => {})
-    }
-  }, [simActive, blacklistPlates.length])
-
-  const handleSimSelectVehicle = useCallback((info: SelectedVehicleInfo | null) => {
-    setSimSelected(info)
-    setSimFollowing(info != null)
-  }, [])
-
-  const handleSimSelectedVehicleTick = useCallback((info: SelectedVehicleInfo) => {
-    setSimSelected(info)
-  }, [])
 
   // ── Live suggestions dropdown ────────────────────────────────────────
   // Backed by real endpoints (/vehicles/search, /vehicles/top) that were
@@ -359,7 +322,7 @@ export default function VehicleSearch() {
 
         {/* Error */}
         {error && (
-          <div className="mx-4 mt-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: '#ff8a94' }}>
+          <div className="mx-4 mt-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: 'var(--accent-critical)' }}>
             {error}
           </div>
         )}
@@ -415,7 +378,7 @@ export default function VehicleSearch() {
             </div>
 
             {history.blacklisted && history.blacklist_info && (
-              <div className="p-2 rounded text-xs mb-3" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.2)', color: '#ff8a94' }}>
+              <div className="p-2 rounded text-xs mb-3" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.2)', color: 'var(--accent-critical)' }}>
                 ⚠ Reason: {history.blacklist_info.reason}
               </div>
             )}
@@ -461,7 +424,7 @@ export default function VehicleSearch() {
 
       {/* ── Map (trajectory) ───────────────────────────────────── */}
       <div className="flex-1 p-3">
-        <div className="map-frame h-full">
+        <div className="map-frame map-frame-amber h-full">
           {(history?.trajectory?.length ?? 0) >= 2 && (
             <div className="map-mode-toggle">
               <button
@@ -489,83 +452,8 @@ export default function VehicleSearch() {
             stopLabels={stopLabels}
             showTrajectoryLegend={!showRoutes}
             showRoutedPaths={showRoutes}
-            basemapStyle="satellite"
-            simulationActive={simActive}
-            simulationBlacklistPlates={blacklistPlates}
-            onSimulationStats={setSimStats}
-            simSelectedVehicleId={simSelected?.id ?? null}
-            onSimSelectVehicle={handleSimSelectVehicle}
-            onSimSelectedVehicleTick={handleSimSelectedVehicleTick}
-            simFollowing={simFollowing}
+            basemapStyle="command-center"
           />
-
-          <button
-            id="vehicle-sim-toggle-btn"
-            onClick={() => {
-              const turningOn = !simActive
-              setSimActive(turningOn)
-              if (!turningOn) { setSimSelected(null); setSimFollowing(false) }
-            }}
-            className="sim-toggle-btn"
-            data-active={simActive}
-            style={{ position: 'absolute', bottom: 14, left: 14, zIndex: 600 }}
-          >
-            <Radar size={14} className={simActive ? 'animate-spin-slow' : undefined} />
-            {simActive ? 'Simulation: ON' : 'Live Traffic Simulation'}
-          </button>
-
-          {simActive && (
-            <div className="sim-mini-panel">
-              <div className="flex items-center gap-2 mb-2">
-                <Radar size={12} style={{ color: 'var(--accent-blue-light)' }} className="animate-spin-slow" />
-                <span className="text-[11px] font-semibold" style={{ color: 'var(--text-muted)', letterSpacing: '0.06em' }}>LIVE SIMULATION</span>
-              </div>
-              <div className="flex items-center gap-4 mb-1">
-                <div>
-                  <div className="text-base font-bold font-mono" style={{ color: 'var(--text-primary)' }}>{simStats?.active ?? 0}</div>
-                  <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>vehicles</div>
-                </div>
-                <div>
-                  <div className="text-base font-bold font-mono" style={{ color: 'var(--accent-red)' }}>{simStats?.blacklisted ?? 0}</div>
-                  <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>blacklisted</div>
-                </div>
-                <div>
-                  <div className="text-base font-bold font-mono" style={{ color: 'var(--accent-amber)' }}>{simStats?.suspicious ?? 0}</div>
-                  <div className="text-[9px]" style={{ color: 'var(--text-muted)' }}>suspicious</div>
-                </div>
-              </div>
-
-              {simSelected && (
-                <div className="mt-2 pt-2" style={{ borderTop: '1px solid var(--border)' }}>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <div className="flex items-center gap-1.5">
-                      {simSelected.kind === 'blacklisted' ? <ShieldAlert size={12} color={VEHICLE_KIND_COLOR[simSelected.kind]} /> : <Eye size={12} color={VEHICLE_KIND_COLOR[simSelected.kind]} />}
-                      <span className="text-[11px] font-semibold" style={{ color: VEHICLE_KIND_COLOR[simSelected.kind] }}>Tracking</span>
-                    </div>
-                    <button
-                      onClick={() => { setSimSelected(null); setSimFollowing(false) }}
-                      className="p-0.5 rounded hover:bg-white/10 transition-colors"
-                      style={{ color: 'var(--text-muted)' }}
-                    >
-                      <X size={12} />
-                    </button>
-                  </div>
-                  <div className="plate-badge text-xs mb-1.5">{simSelected.plate}</div>
-                  <div className="text-[11px] mb-1" style={{ color: 'var(--text-secondary)' }}>{VEHICLE_KIND_LABEL[simSelected.kind]}</div>
-                  <div className="text-[11px]" style={{ color: 'var(--text-muted)' }}>
-                    {simSelected.fromCamera} → {simSelected.toCamera}
-                  </div>
-                  <button
-                    onClick={() => setSimFollowing(f => !f)}
-                    className="btn-secondary w-full flex items-center justify-center gap-1.5 mt-2 py-1 text-[11px]"
-                  >
-                    <Crosshair size={11} />
-                    {simFollowing ? 'Following' : 'Follow'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
 
           {history && history.sightings.length > 1 && (
             <div className="playback-bar">

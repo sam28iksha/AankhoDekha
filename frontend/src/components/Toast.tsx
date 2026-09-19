@@ -43,7 +43,16 @@ export default function Toast() {
         const color = isAnomaly ? 'var(--accent-amber)' : 'var(--accent-red)'
         const Icon = isAnomaly ? TriangleAlert : AlertTriangle
         return (
-          <div key={t.toastId} className="alert-row alert-pulse" style={{ background: 'rgba(6,9,15,0.95)', backdropFilter: 'blur(12px)', borderColor: isAnomaly ? 'rgba(245,158,11,0.3)' : undefined }}>
+          <div
+            key={t.toastId}
+            className="alert-row alert-pulse"
+            style={{
+              background: 'var(--bg-card)',
+              boxShadow: '0 8px 24px rgba(7, 19, 15, 0.16)',
+              borderColor: isAnomaly ? 'rgba(255, 176, 32, 0.35)' : undefined,
+              borderLeft: `3px solid ${color}`,
+            }}
+          >
             <Icon size={16} style={{ color, flexShrink: 0, marginTop: 2 }} />
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold" style={{ color }}>{isAnomaly ? 'Route Anomaly' : 'Blacklist Hit'}</div>

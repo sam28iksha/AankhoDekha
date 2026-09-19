@@ -81,7 +81,7 @@ export default function AuditLog() {
           ) : (
             <table className="w-full text-sm">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'rgba(6,9,15,0.6)' }}>
+                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['Time', 'User', 'Action', 'Target', 'Details'].map(h => (
                     <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
@@ -89,7 +89,7 @@ export default function AuditLog() {
               </thead>
               <tbody>
                 {entries.map(e => (
-                  <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                  <tr key={e.id} style={{ borderBottom: '1px solid var(--border)' }}>
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>
                       {format(new Date(e.timestamp), 'dd MMM HH:mm:ss')}
                     </td>

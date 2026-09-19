@@ -9,6 +9,7 @@ import { useAuth, hasRole } from '../lib/auth'
 import Toast from './Toast'
 import ErrorBoundary from './ErrorBoundary'
 import Logomark from './Logomark'
+import CitySkylinePanel from './CitySkylinePanel'
 
 // Command-center touch — a live clock reinforces "this is a monitoring
 // system watching in real time" the moment the header loads, before any
@@ -58,24 +59,21 @@ export default function Layout() {
   }, [location.pathname])
 
   return (
-    <div className="flex h-screen w-screen flex-col overflow-hidden">
-      {/* ── Top nav bar ──────────────────────────────────────── */}
-      <header className="command-header flex items-center gap-4 px-4 flex-shrink-0">
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+    <div className="flex h-screen w-screen overflow-hidden">
+      {/* ── Sidebar (dark forest-green brand rail) ──────────────────────── */}
+      <aside className="command-sidebar flex-shrink-0">
+        <div className="command-sidebar-logo">
           <div className="command-logo-badge">
             <Logomark size={16} color="white" />
           </div>
-          <div className="hidden sm:block leading-tight">
-            <div className="command-wordmark">NAGARNETRA</div>
-            <div className="text-[10px]" style={{ color: 'var(--text-muted)', letterSpacing: '0.04em' }}>THE EYE OF THE CITY</div>
+          <div className="leading-tight">
+            <div className="command-wordmark" style={{ color: '#FFFFFF' }}>NAGARNETRA</div>
+            <div className="text-[10px]" style={{ color: 'rgba(234, 242, 236, 0.55)', letterSpacing: '0.04em' }}>THE EYE OF THE CITY</div>
           </div>
         </div>
 
-        <div style={{ width: 1, height: 28, background: 'var(--border)' }} />
-
-        {/* Nav pills */}
-        <nav className="flex items-center gap-1 flex-1 overflow-x-auto">
+        <nav className="command-sidebar-nav">
+          <div className="command-sidebar-section">MONITORING</div>
           {NAV_ITEMS.map(({ to, label, icon: Icon, id }) => (
             <NavLink
               key={to}
@@ -83,60 +81,79 @@ export default function Layout() {
               id={id}
               className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
             >
-              <Icon size={15} />
+              <Icon size={16} />
               <span>{label}</span>
               {to === '/alerts' && unseenAlerts > 0 && (
                 <span className="nav-badge">{unseenAlerts > 99 ? '99+' : unseenAlerts}</span>
               )}
             </NavLink>
           ))}
-          {hasRole(user, 'admin') && ADMIN_NAV_ITEMS.map(({ to, label, icon: Icon, id }) => (
-            <NavLink
-              key={to}
-              to={to}
-              id={id}
-              className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
-            >
-              <Icon size={15} />
-              <span>{label}</span>
-            </NavLink>
-          ))}
+          {hasRole(user, 'admin') && (
+            <>
+              <div className="command-sidebar-section">ADMINISTRATION</div>
+              {ADMIN_NAV_ITEMS.map(({ to, label, icon: Icon, id }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  id={id}
+                  className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Icon size={16} />
+                  <span>{label}</span>
+                </NavLink>
+              ))}
+            </>
+          )}
+
+          {/* Smart-city branding — Dashboard/Live Map only. `.command-sidebar-nav`
+              is the flex:1 element that actually owns the empty space below
+              the nav items, so this has to be its last child (with
+              margin-top: auto) to land there — a sibling after </nav> would
+              just render with no space to fill. */}
+          {location.pathname === '/dashboard' && (
+            <div className="command-sidebar-skyline">
+              <CitySkylinePanel compact />
+            </div>
+          )}
         </nav>
 
-        {/* Live clock + WS status + user + logout */}
-        <div className="flex items-center gap-3 flex-shrink-0">
-          <LiveClock />
-          <div className={`nav-status-pill ${connected ? 'online' : 'offline'}`}>
+        <div className="command-sidebar-footer">
+          <div className={`nav-status-pill ${connected ? 'online' : 'offline'}`} style={{ marginBottom: 10 }}>
             {connected
-              ? <><Wifi size={13} /><span className="hidden md:inline">LIVE</span></>
-              : <><WifiOff size={13} /><span className="hidden md:inline">RECONNECTING</span></>
+              ? <><Wifi size={13} /><span>LIVE</span></>
+              : <><WifiOff size={13} /><span>RECONNECTING</span></>
             }
           </div>
-          <div className="hidden lg:block text-right leading-tight">
-            <div className="text-[11px]" style={{ color: 'var(--text-primary)' }}>{user?.username}</div>
-            <div className="text-[11px] capitalize" style={{ color: 'var(--text-muted)' }}>{user?.role}</div>
+          <div className="flex items-center justify-between gap-2">
+            <div className="leading-tight min-w-0">
+              <div className="text-[11px] truncate" style={{ color: '#FFFFFF' }}>{user?.username}</div>
+              <div className="text-[11px] capitalize" style={{ color: 'rgba(234, 242, 236, 0.55)' }}>{user?.role}</div>
+            </div>
+            <button
+              id="logout-btn"
+              onClick={logout}
+              className="flex items-center gap-1.5 text-xs p-1.5 rounded transition-colors hover:bg-white/10 flex-shrink-0"
+              style={{ color: 'rgba(234, 242, 236, 0.7)' }}
+              title="Log out"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
-          <button
-            id="logout-btn"
-            onClick={logout}
-            className="flex items-center gap-1.5 text-xs px-2 py-1.5 rounded transition-colors hover:bg-white/5"
-            style={{ color: 'var(--text-muted)' }}
-            title="Log out"
-          >
-            <LogOut size={14} />
-          </button>
         </div>
-      </header>
+      </aside>
 
-      {/* Signature gradient accent — navy -> cyan -> amber, drifts slowly */}
-      <div className="gradient-bar" />
+      {/* ── Main column: white header + page content ────────────────────── */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+        <header className="command-header flex items-center justify-end gap-4 px-6 flex-shrink-0">
+          <LiveClock />
+        </header>
 
-      {/* ── Page content ─────────────────────────────────────── */}
-      <main className="flex-1 overflow-hidden page-fade-in" key={location.pathname}>
-        <ErrorBoundary>
-          <Outlet />
-        </ErrorBoundary>
-      </main>
+        <main className="flex-1 overflow-hidden page-fade-in" key={location.pathname}>
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
+        </main>
+      </div>
 
       <Toast />
     </div>
