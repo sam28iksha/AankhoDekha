@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Application Configuration
+AANKHODEKHA — Application Configuration
 Reads values from environment variables / .env file.
 """
 from __future__ import annotations
@@ -19,14 +19,14 @@ class Settings(BaseSettings):
 
     # ── Database ──────────────────────────────────────────────────
     DB_MODE: str = "sqlite"  # "sqlite" | "postgres"
-    SQLITE_PATH: str = "./data/nagarnetra.db"
+    SQLITE_PATH: str = "./data/aankhodekha.db"
     DATABASE_URL: str = ""  # only needed for postgres
 
     POSTGRES_HOST: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str = "nagarnetra"
-    POSTGRES_PASSWORD: str = "nagarnetra_pass"
-    POSTGRES_DB: str = "nagarnetra"
+    POSTGRES_USER: str = "aankhodekha"
+    POSTGRES_PASSWORD: str = "aankhodekha_pass"
+    POSTGRES_DB: str = "aankhodekha"
 
     # ── ANPR Pipeline ─────────────────────────────────────────────
     YOLO_WEIGHTS_PATH: str = "./models/best.pt"
@@ -78,11 +78,15 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = 480  # one working shift
 
+    ANOMALY_SPEED_THRESHOLD_KMH: float = 120.0
+    ANOMALY_LOOKBACK_HOURS: int = 6
+    ANOMALY_MIN_DISTANCE_KM: float = 0.5
+
     # Bootstrap account — seeded once if the users table is empty. Change
     # the password after first login; this only exists to solve "how do I
     # log in the first time."
     INITIAL_ADMIN_USERNAME: str = "admin"
-    INITIAL_ADMIN_PASSWORD: str = "nagarnetra_admin"
+    INITIAL_ADMIN_PASSWORD: str = "aankhodekha_admin"
 
     def get_database_url(self) -> str:
         """Return the correct async database URL based on DB_MODE."""

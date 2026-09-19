@@ -1,28 +1,32 @@
 """
-NAGARNETRA — ANPR Pipeline Orchestrator
-Connects: FrameSource → PlateDetector → PlateOCR → temporal clustering → PlateEvent
+AANKHODEKHA — ANPR Pipeline Orchestrator
+Connects: FrameSource → PlateDetector → VehicleDetector → PlateOCR → temporal clustering → PlateEvent
 """
 from __future__ import annotations
 
 import asyncio
 import difflib
 import logging
-import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
-from typing import AsyncIterator, Callable, Optional
+from typing import AsyncIterator, Optional
+from anpr.ocr import plate_ocr, _validate_plate
 
 import cv2
 import numpy as np
 
 from config import settings
-from anpr.frame_source import FrameSource, Frame
-from anpr.detector import plate_detector, PlateDetection
-from anpr.ocr import plate_ocr
+from anpr.frame_source import FrameSource
+from anpr.detector import plate_detector, vehicle_detector, PlateDetection, VehicleDetection
+from time import perf_counter
+from utils.metrics import metrics
 
 logger = logging.getLogger(__name__)
 
+# --- UPGRADE 2: Concurrency Control ---
+_ML_SEMAPHORE = asyncio.Semaphore(4) 
 
 @dataclass
 class PlateEvent:
@@ -33,6 +37,8 @@ class PlateEvent:
     lng: float
     timestamp: datetime
     confidence: float
+    vehicle_type: str = "unknown"
+    color: str = "unknown"
     frame_snapshot_path: Optional[str] = None
 
 
@@ -56,89 +62,112 @@ async def save_frame_snapshot(
         return None
 
 
-# ── Temporal plate clustering ────────────────────────────────────────────────
-# A single physical vehicle crossing a camera's field of view gets sampled
-# across several consecutive frames, and OCR is noisy frame-to-frame (a single
-# flipped character — e.g. "MH10Z0499" vs "MH1OZ0499" — is the common case,
-# not the exception). Emitting one PlateEvent per raw OCR read turns one real
-# sighting into several "different" plates, which both inflates event counts
-# and breaks cross-camera trajectory matching (which relies on exact string
-# equality). Instead, reads that are close in time AND text-similar are
-# buffered into a cluster and collapsed into a single canonical reading via
-# confidence-weighted, per-character majority vote once the vehicle leaves
-# frame (no similar read for _CLUSTER_GAP_SECONDS).
-_CLUSTER_GAP_SECONDS = 3.0
-_SIMILARITY_THRESHOLD = 0.72  # difflib ratio; tolerant of 1-2 character OCR flips
+def _normalize_plate(text: str) -> str:
+    """Strip all non-alphanumeric characters and force uppercase."""
+    if not text:
+        return ""
+    return re.sub(r'[^A-Z0-9]', '', text.upper())
 
-_PlateRead = tuple  # (plate_text, confidence, timestamp, snapshot_path)
+
+_CLUSTER_GAP_SECONDS = 3.0
+_SIMILARITY_THRESHOLD = 0.72  
+
+# Tracks: plate, conf, ts, snapshot, vehicle_type, color
+_PlateRead = tuple[str, float, datetime, Optional[str], str, str]
 
 
 def _plate_similarity(a: str, b: str) -> float:
     return difflib.SequenceMatcher(None, a, b).ratio()
 
 
+def _associate_vehicle(plate_det: PlateDetection, vehicle_dets: list[VehicleDetection]) -> tuple[str, str]:
+    """
+    Finds the smallest vehicle bounding box containing the plate's center.
+    Returns (vehicle_type, color).
+    """
+    px_c = (plate_det.x1 + plate_det.x2) / 2.0
+    py_c = (plate_det.y1 + plate_det.y2) / 2.0
+
+    best_match = None
+    min_area = float('inf')
+
+    for v in vehicle_dets:
+        if v.x1 <= px_c <= v.x2 and v.y1 <= py_c <= v.y2:
+            area = (v.x2 - v.x1) * (v.y2 - v.y1)
+            if area < min_area:
+                min_area = area
+                best_match = v
+
+    if best_match:
+        return best_match.vehicle_type, best_match.color
+    return "unknown", "unknown"
+
+
 class _PlateCluster:
     """Buffers near-duplicate OCR reads believed to be the same vehicle sighting."""
 
-    def __init__(self, plate: str, confidence: float, ts: datetime, snapshot_path: Optional[str]):
-        self.reads: list[_PlateRead] = [(plate, confidence, ts, snapshot_path)]
+    def __init__(self, plate: str, confidence: float, ts: datetime, snapshot_path: Optional[str], v_type: str, color: str):
+        self.reads: list[_PlateRead] = [(plate, confidence, ts, snapshot_path, v_type, color)]
         self.last_seen = ts
 
     @property
     def representative(self) -> str:
-        # Matching anchors on the most recent read so a cluster can "drift"
-        # across several frames of an improving/degrading OCR read.
         return self.reads[-1][0]
 
-    def add(self, plate: str, confidence: float, ts: datetime, snapshot_path: Optional[str]) -> None:
-        self.reads.append((plate, confidence, ts, snapshot_path))
+    def add(self, plate: str, confidence: float, ts: datetime, snapshot_path: Optional[str], v_type: str, color: str) -> None:
+        self.reads.append((plate, confidence, ts, snapshot_path, v_type, color))
         self.last_seen = ts
 
-    def resolve(self) -> tuple[str, float, datetime, Optional[str]]:
-        """
-        Confidence-weighted majority vote across all reads in the cluster.
-        Canonical length = the length with the highest total confidence weight;
-        each character position within that length is then the highest-weighted
-        character across contributing reads. Falls back cleanly to the single
-        read's text when the cluster has only one member.
-        """
+    def resolve(self) -> tuple[str, float, datetime, Optional[str], str, str]:
         if len(self.reads) == 1:
-            plate, conf, ts, snap = self.reads[0]
-            return plate, conf, ts, snap
+            return self.reads[0]
 
+        # 1. Resolve Plate String via Confidence-Weighted Character Voting
         length_weight: dict[int, float] = {}
-        for plate, conf, _, _ in self.reads:
-            length_weight[len(plate)] = length_weight.get(len(plate), 0.0) + conf
+        for r in self.reads:
+            length_weight[len(r[0])] = length_weight.get(len(r[0]), 0.0) + r[1]
         canonical_len = max(length_weight, key=lambda l: length_weight[l])
 
         candidates = [r for r in self.reads if len(r[0]) == canonical_len]
         chars = []
         for i in range(canonical_len):
             tally: dict[str, float] = {}
-            for plate, conf, _, _ in candidates:
-                tally[plate[i]] = tally.get(plate[i], 0.0) + conf
+            for r in candidates:
+                tally[r[0][i]] = tally.get(r[0][i], 0.0) + r[1]
             chars.append(max(tally, key=lambda ch: tally[ch]))
-        canonical_plate = "".join(chars)
+        voted_plate = "".join(chars)
+
+        
+               # 2. Strict Safety Gate: Validate the voted canonical string.
+        valid_reads = [r for r in self.reads if _validate_plate(r[0])]
+
+        if _validate_plate(voted_plate):
+            canonical_plate = voted_plate
+        elif valid_reads:
+            canonical_plate = max(valid_reads, key=lambda r: r[1])[0]
+        else:
+            raise ValueError("Plate cluster contains no valid reads")
+
+        # 3. Resolve Vehicle Attributes (Majority Vote)
+        type_tally: dict[str, int] = {}
+        color_tally: dict[str, int] = {}
+        
+        for r in self.reads:
+            if r[4] != "unknown": type_tally[r[4]] = type_tally.get(r[4], 0) + 1
+            if r[5] != "unknown": color_tally[r[5]] = color_tally.get(r[5], 0) + 1
+            
+        best_type = max(type_tally, key=lambda k: type_tally[k]) if type_tally else "unknown"
+        best_color = max(color_tally, key=lambda k: color_tally[k]) if color_tally else "unknown"
 
         best_read = max(self.reads, key=lambda r: r[1])
         best_conf = best_read[1]
         best_snapshot = best_read[3]
-        first_ts = self.reads[0][2]  # when the vehicle first entered frame
-        return canonical_plate, best_conf, first_ts, best_snapshot
-# ──────────────────────────────────────────────────────────────────────────────
+        first_ts = self.reads[0][2] 
+        
+        return canonical_plate, best_conf, first_ts, best_snapshot, best_type, best_color
 
 
 class ANPRPipeline:
-    """
-    Processes a FrameSource end-to-end and yields PlateEvent objects.
-    Designed to be source-agnostic: pass any FrameSource subclass.
-
-    Usage
-    -----
-    async for event in ANPRPipeline(source, camera).run():
-        await write_to_db(event)
-    """
-
     def __init__(
         self,
         source: FrameSource,
@@ -156,10 +185,10 @@ class ANPRPipeline:
         self.save_snapshots = save_snapshots
 
     def _emit(self, cluster: _PlateCluster) -> PlateEvent:
-        plate, conf, ts, snapshot_path = cluster.resolve()
+        plate, conf, ts, snapshot_path, v_type, color = cluster.resolve()
         logger.info(
             f"[{self.camera_id}] Plate: {plate} | Conf: {conf:.2f} | "
-            f"Time: {ts.isoformat()} | merged from {len(cluster.reads)} read(s)"
+            f"Type: {v_type} | Color: {color} | Time: {ts.isoformat()}"
         )
         return PlateEvent(
             plate_number=plate,
@@ -168,6 +197,8 @@ class ANPRPipeline:
             lng=self.camera_lng,
             timestamp=ts,
             confidence=round(conf, 4),
+            vehicle_type=v_type,
+            color=color,
             frame_snapshot_path=snapshot_path,
         )
 
@@ -177,14 +208,15 @@ class ANPRPipeline:
         active_clusters: list[_PlateCluster] = []
 
         async for frame in self.source:
+            pipeline_start = perf_counter()
+            metrics.increment("frames_processed")
+            metrics.mark_camera_active(self.camera_id)
+
             frame_count += 1
-            # Compute real timestamp for this frame
             frame_ts = self.video_start_time + timedelta(
                 milliseconds=frame.timestamp_ms
             )
 
-            # Close out clusters the vehicle has clearly left (no matching
-            # read for a while) before considering this frame's detections.
             still_active = []
             for cluster in active_clusters:
                 if (frame_ts - cluster.last_seen).total_seconds() > _CLUSTER_GAP_SECONDS:
@@ -194,17 +226,44 @@ class ANPRPipeline:
                     still_active.append(cluster)
             active_clusters = still_active
 
-            # --- Detection ---
             loop = asyncio.get_running_loop()
-            detections: list[PlateDetection] = await loop.run_in_executor(
-                None, plate_detector.detect, frame.image
-            )
-
-            for det in detections:
-                # --- OCR ---
-                plate_text, ocr_conf = await loop.run_in_executor(
-                    None, plate_ocr.read, det.crop
+            
+            # --- 1. Plate Detection ---
+            async with _ML_SEMAPHORE:
+                det_start = perf_counter()
+                plate_dets: list[PlateDetection] = await loop.run_in_executor(
+                    None, plate_detector.detect, frame.image
                 )
+                metrics.record_latency("detection", (perf_counter() - det_start) * 1000)
+                metrics.increment("plates_detected", len(plate_dets))
+
+            # --- 2. Vehicle Detection (Conditional) ---
+            vehicle_dets: list[VehicleDetection] = []
+            if plate_dets:
+                async with _ML_SEMAPHORE:
+                    v_det_start = perf_counter()
+                    vehicle_dets = await loop.run_in_executor(
+                        None, vehicle_detector.detect, frame.image
+                    )
+                    metrics.record_latency("vehicle_detection", (perf_counter() - v_det_start) * 1000)
+
+            # --- 3. Association & OCR ---
+            for det in plate_dets:
+                v_type, color = _associate_vehicle(det, vehicle_dets)
+
+                metrics.increment("ocr_attempts")
+
+                
+                # --- Protected PaddleOCR Read ---
+                async with _ML_SEMAPHORE:
+                    ocr_start = perf_counter()
+                    raw_plate_text, ocr_conf = await loop.run_in_executor(
+                        None, plate_ocr.read, det.crop
+                    )
+                    metrics.record_latency("ocr", (perf_counter() - ocr_start) * 1000)
+
+                # Apply Normalization immediately!
+                plate_text = _normalize_plate(raw_plate_text)
 
                 if not plate_text:
                     continue
@@ -212,10 +271,9 @@ class ANPRPipeline:
                     logger.debug(f"Low OCR conf {ocr_conf:.2f} for plate '{plate_text}', skipping.")
                     continue
 
-                # Combined confidence (geometric mean of YOLO + OCR)
+                metrics.record_ocr_success(ocr_conf)
                 combined_conf = (det.confidence * ocr_conf) ** 0.5
 
-                # Optional snapshot
                 snapshot_path = None
                 if self.save_snapshots:
                     snapshot_path = await save_frame_snapshot(
@@ -229,13 +287,15 @@ class ANPRPipeline:
                         break
 
                 if matched:
-                    matched.add(plate_text, combined_conf, frame_ts, snapshot_path)
+                    matched.add(plate_text, combined_conf, frame_ts, snapshot_path, v_type, color)
                 else:
                     active_clusters.append(
-                        _PlateCluster(plate_text, combined_conf, frame_ts, snapshot_path)
+                        _PlateCluster(plate_text, combined_conf, frame_ts, snapshot_path, v_type, color)
                     )
 
-        # Video ended — flush every cluster still open.
+            # Record total pipeline latency for this frame (YOLO + YOLO + OCR + Clustering)
+            metrics.record_latency("pipeline", (perf_counter() - pipeline_start) * 1000)
+
         for cluster in active_clusters:
             event_count += 1
             yield self._emit(cluster)

@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Shared time anchor for recent-window analytics.
+AANKHODEKHA — Shared time anchor for recent-window analytics.
 """
 from __future__ import annotations
 

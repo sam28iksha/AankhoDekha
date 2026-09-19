@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NAGARNETRA — Load blacklist.json into DB
+AANKHODEKHA — Load blacklist.json into DB
 Convenience helper: after you update blacklist.json with real plate picks,
 run this to load them into the running database without restarting the server.
 
@@ -12,7 +12,7 @@ from pathlib import Path
 from datetime import datetime, timezone
 
 # Path resolution — two-runtime design:
-#   Local: inserts NAGARNETRA/backend/ so backend modules resolve.
+#   Local: inserts AANKHODEKHA/backend/ so backend modules resolve.
 #   Docker: PYTHONPATH=/app (docker-compose.yml) handles it; insert is a no-op.
 _backend_path = Path(__file__).parent.parent / "backend"
 if _backend_path.exists():

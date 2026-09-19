@@ -1,5 +1,5 @@
 """
-NAGARNETRA — FastAPI Application Entry Point
+AANKHODEKHA — FastAPI Application Entry Point
 Team: The Underthinker | Smart India Hackathon 2026
 """
 from __future__ import annotations
@@ -19,6 +19,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 
+
 from config import settings
 
 # Configure logging
@@ -34,7 +35,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan — startup and shutdown events."""
     logger.info("=" * 60)
-    logger.info("  NAGARNETRA — The Eye of the City")
+    logger.info("  AANKHODEKHA — The Eye of the City")
     logger.info("  Team: The Underthinker | SIH 2026")
     logger.info("=" * 60)
 
@@ -46,11 +47,11 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("NAGARNETRA shutting down.")
+    logger.info("AANKHODEKHA shutting down.")
 
 
 app = FastAPI(
-    title="NAGARNETRA API",
+    title="AANKHODEKHA API",
     description=(
         "Multi-Camera ANPR & Traffic Intelligence Platform\n"
         "Smart India Hackathon 2026 · Team: The Underthinker"
@@ -90,6 +91,7 @@ from api.preview import router as preview_router
 from api.routing import router as routing_router
 from api.auth import router as auth_router
 from api.audit import router as audit_router
+from api.health import router as health_router  # Added health router
 
 app.include_router(auth_router)
 app.include_router(audit_router)
@@ -100,24 +102,16 @@ app.include_router(alerts_router)
 app.include_router(blacklist_router)
 app.include_router(preview_router)
 app.include_router(routing_router)
-
-
-@app.get("/health")
-async def health():
-    """Health check endpoint."""
-    return {
-        "status": "ok",
-        "service": "NAGARNETRA",
-        "db_mode": settings.DB_MODE,
-    }
+app.include_router(health_router)               # Registered health router
 
 
 @app.get("/")
 async def root():
     return {
-        "service": "NAGARNETRA — The Eye of the City",
+        "service": "AANKHODEKHA — The Eye of the City",
         "team": "The Underthinker",
         "hackathon": "Smart India Hackathon 2026",
         "docs": "/docs",
         "health": "/health",
+        "metrics": "/health/metrics"
     }

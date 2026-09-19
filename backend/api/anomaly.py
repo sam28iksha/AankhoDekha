@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Route Anomaly Detection
+AANKHODEKHA — Route Anomaly Detection
 Flags a "suspicious route anomaly" when a plate's newest sighting implies a
 physically impossible transit speed from its most recent prior sighting at a
 different camera. This is the real-world signal ANPR platforms use to catch
@@ -14,7 +14,7 @@ regardless of which pipeline wrote the sighting.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -26,6 +26,11 @@ from api.alert_manager import alert_manager
 
 logger = logging.getLogger(__name__)
 
+def _normalize_to_utc(dt: datetime) -> datetime:
+    """Ensure a datetime is timezone-aware and set to UTC."""
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
 
 async def check_speed_anomaly(
     db: AsyncSession,
@@ -38,13 +43,17 @@ async def check_speed_anomaly(
 ) -> None:
     """
     Compare this sighting against the plate's most recent prior sighting at a
-    DIFFERENT camera within the lookback window. If the implied average speed
-    exceeds settings.ANOMALY_SPEED_THRESHOLD_KMH, write + broadcast an
-    "anomaly" alert — same live-alert path used for blacklist hits.
-
-    Does not commit — caller is expected to commit alongside its own writes.
+    different camera within the configured lookback window.
     """
-    window_start = timestamp - timedelta(hours=settings.ANOMALY_LOOKBACK_HOURS)
+
+    # Normalize once so all timestamp calculations use the same timezone.
+    timestamp = _normalize_to_utc(timestamp)
+
+    window_start = timestamp - timedelta(
+        hours=settings.ANOMALY_LOOKBACK_HOURS
+    )
+
+    # 1. FIND PREVIOUS SIGHTING
     result = await db.execute(
         select(PlateEvent, Camera)
         .join(Camera, PlateEvent.camera_id == Camera.id)
@@ -54,32 +63,73 @@ async def check_speed_anomaly(
             PlateEvent.timestamp < timestamp,
             PlateEvent.timestamp >= window_start,
         )
-        .order_by(PlateEvent.timestamp.desc())
+        .order_by(
+            PlateEvent.timestamp.desc(),
+            PlateEvent.id.desc(),
+        )
         .limit(1)
     )
+
     row = result.first()
+
     if row is None:
         return
 
     prev_event, prev_cam = row
-    # SQLite doesn't round-trip tz-awareness — a value written as UTC-aware
-    # can come back naive. Both sides are always UTC in practice, so compare
-    # as naive to avoid "can't subtract offset-naive and offset-aware".
-    delta_seconds = (timestamp.replace(tzinfo=None) - prev_event.timestamp.replace(tzinfo=None)).total_seconds()
+
+    # 2. CALCULATE TIME DELTA
+    ts_prev = _normalize_to_utc(prev_event.timestamp)
+
+    delta_seconds = (timestamp - ts_prev).total_seconds()
+
     if delta_seconds <= 0:
         return
 
-    dist_km = haversine_km(prev_cam.lat, prev_cam.lng, camera_lat, camera_lng)
+    # 3. CALCULATE DISTANCE
+    dist_km = haversine_km(
+        prev_cam.lat,
+        prev_cam.lng,
+        camera_lat,
+        camera_lng,
+    )
+
+    # Ignore very small movements that may be caused by GPS drift,
+    # camera proximity, or timestamp synchronization issues.
+    if dist_km < settings.ANOMALY_MIN_DISTANCE_KM:
+        return
+
     speed_kmh = dist_km / (delta_seconds / 3600)
 
     if speed_kmh <= settings.ANOMALY_SPEED_THRESHOLD_KMH:
         return
 
+    # 4. ANTI-SPAM GUARD
+    cooldown_start = timestamp - timedelta(minutes=15)
+
+    recent_alert = await db.execute(
+        select(Alert.id)
+        .where(
+            Alert.plate_number == plate_number,
+            Alert.alert_type == "anomaly",
+            Alert.timestamp >= cooldown_start,
+            Alert.timestamp <= timestamp,
+        )
+        .limit(1)
+    )
+
+    if recent_alert.first() is not None:
+        logger.info(
+            f"Suppressed duplicate anomaly alert for {plate_number}"
+        )
+        return
+
+    # 5. GENERATE ALERT
     details = (
-        f"Implausible transit: {dist_km:.1f} km between {prev_cam.name} and {camera_name} "
-        f"in {delta_seconds:.0f}s — implied speed {speed_kmh:,.0f} km/h exceeds "
-        f"{settings.ANOMALY_SPEED_THRESHOLD_KMH:.0f} km/h threshold. Possible cloned "
-        f"plate or data anomaly."
+        f"Implausible transit: {dist_km:.1f} km between "
+        f"{prev_cam.name} and {camera_name} "
+        f"in {delta_seconds:.0f}s — implied speed "
+        f"{speed_kmh:,.0f} km/h exceeds "
+        f"{settings.ANOMALY_SPEED_THRESHOLD_KMH:.0f} km/h threshold."
     )
 
     alert = Alert(
@@ -91,7 +141,10 @@ async def check_speed_anomaly(
         details=details,
         source="detection",
     )
+
     db.add(alert)
+
+    # Generate the database ID before broadcasting.
     await db.flush()
 
     await alert_manager.broadcast_alert(
@@ -104,4 +157,7 @@ async def check_speed_anomaly(
         details=details,
         source="detection",
     )
-    logger.warning(f"🚧 ROUTE ANOMALY: {plate_number} — {details}")
+
+    logger.warning(
+        f"🚧 ROUTE ANOMALY: {plate_number} — {details}"
+    )

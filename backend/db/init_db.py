@@ -1,5 +1,5 @@
 """
-NAGARNETRA — DB Initializer
+AANKHODEKHA — DB Initializer
 Creates all tables and seeds cameras from cameras.json + blacklist from blacklist.json.
 Called on application startup.
 """
@@ -16,6 +16,7 @@ from db.base import Base, engine, AsyncSessionLocal
 from db.models import Camera, Blacklist, User
 from config import settings
 from auth.security import hash_password
+
 
 logger = logging.getLogger(__name__)
 

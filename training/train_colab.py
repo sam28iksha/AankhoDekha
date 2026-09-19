@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Colab training cell: fresh YOLOv8 fine-tune on the 10k-image
+AANKHODEKHA — Colab training cell: fresh YOLOv8 fine-tune on the 10k-image
 Roboflow "license-plate-recognition" set, starting from generic COCO
 pretrained weights rather than continuing the earlier 4-epoch best.pt (that
 run was judged too undertrained to be worth building on).
@@ -49,11 +49,11 @@ EPOCHS = 80           # generous ceiling — patience will stop it earlier if it
 PATIENCE = 15         # stop if val mAP hasn't improved in this many epochs
 IMG_SIZE = 640
 BATCH = 16
-RUN_NAME = "nagarnetra_10k_fresh"
+RUN_NAME = "aankhodekha_10k_fresh"
 
 # Save straight to Drive, not /content — save_period=1 checkpointing is
 # useless if a Colab disconnect wipes the ephemeral local disk it's sitting on.
-PROJECT_DIR = "/content/drive/MyDrive/nagarnetra_runs"
+PROJECT_DIR = "/content/drive/MyDrive/aankhodekha_runs"
 # ────────────────────────────────────────────────────────────────────────
 
 model = YOLO(START_WEIGHTS)

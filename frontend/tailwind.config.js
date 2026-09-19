@@ -8,7 +8,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        // NAGARNETRA brand palette
+        // AANKHODEKHA brand palette
         brand: {
           50: "#f0f7ff",
           100: "#e0effe",

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NAGARNETRA — Demo Seed Script
+AANKHODEKHA — Demo Seed Script
 ==============================
 Populates the database with synthetic historical events so the dashboard
 isn't empty before real video files are provided.
@@ -27,7 +27,7 @@ from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 # Path resolution — two-runtime design:
-#   Local (python scripts/seed_demo.py): inserts NAGARNETRA/backend/ so
+#   Local (python scripts/seed_demo.py): inserts AANKHODEKHA/backend/ so
 #     'from db.xxx import ...' resolves without installing the package.
 #   Docker (docker compose exec backend python /app/scripts/seed_demo.py):
 #     PYTHONPATH=/app is set in docker-compose.yml so /app/backend/ is never
@@ -182,7 +182,7 @@ async def seed_demo(clear: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Seed demo data into NAGARNETRA DB")
+    parser = argparse.ArgumentParser(description="Seed demo data into AANKHODEKHA DB")
     parser.add_argument("--clear", action="store_true", help="Clear existing data before seeding")
     args = parser.parse_args()
     asyncio.run(seed_demo(clear=args.clear))

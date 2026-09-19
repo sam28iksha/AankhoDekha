@@ -1,5 +1,5 @@
 """
-NAGARNETRA — WebSocket Alert Manager
+AANKHODEKHA — WebSocket Alert Manager
 Manages connected WebSocket clients and broadcasts alert messages.
 """
 from __future__ import annotations

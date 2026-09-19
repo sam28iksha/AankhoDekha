@@ -1,5 +1,5 @@
 """
-NAGARNETRA — PaddleOCR License Plate Reader
+AANKHODEKHA — PaddleOCR License Plate Reader
 Reads character text from cropped plate images.
 
 Post-processing pipeline:
@@ -182,6 +182,23 @@ def _correct_plate_confusions(plate: str) -> str:
         if _validate_plate(corrected):
             return corrected
     return plate
+
+
+def _correct_missing_district_zero(plate: str) -> str:
+    """
+    Recovers a real, observed OCR miss: a dropped leading zero in the 2-digit
+    RTO district code (e.g. 'DL3ER1283' read instead of 'DL03ER1283'). Every
+    real Indian district code is 01-99, so a plate that's exactly one
+    character short of a valid standard-format length, with only a single
+    digit where the district code should be, is very likely missing this
+    specific digit rather than being a different plate entirely. Only kept
+    if inserting it actually produces a valid plate — never returns an
+    unvalidated guess.
+    """
+    if len(plate) not in (8, 9, 10):
+        return plate
+    candidate = plate[:2] + "0" + plate[2:]
+    return candidate if _validate_plate(candidate) else plate
 # ─────────────────────────────────────────────────────────────────────────────
 
 
@@ -227,6 +244,7 @@ class PlateOCR:
 
         try:
             results = self._ocr.ocr(crop, cls=True)
+            logger.warning(f"OCR RAW RESULT: {results}")
         except Exception as e:
             logger.warning(f"PaddleOCR error: {e}")
             return "", 0.0
@@ -263,9 +281,13 @@ class PlateOCR:
         final_plate = normalized
         if not _validate_plate(final_plate):
             corrected = _correct_plate_confusions(normalized)
+            zero_corrected = _correct_missing_district_zero(normalized)
             if corrected != normalized and _validate_plate(corrected):
                 logger.info(f"OCR corrected '{normalized}' -> '{corrected}' (character-confusion fix)")
                 final_plate = corrected
+            elif zero_corrected != normalized and _validate_plate(zero_corrected):
+                logger.info(f"OCR corrected '{normalized}' -> '{zero_corrected}' (missing district-code zero)")
+                final_plate = zero_corrected
             else:
                 logger.info(
                     f"OCR rejected (non-plate text): '{normalized}' "

@@ -66,9 +66,11 @@ export default function Layout() {
           <div className="command-logo-badge">
             <Logomark size={16} color="white" />
           </div>
-          <div className="leading-tight">
-            <div className="command-wordmark" style={{ color: '#FFFFFF' }}>NAGARNETRA</div>
-            <div className="text-[10px]" style={{ color: 'rgba(234, 242, 236, 0.55)', letterSpacing: '0.04em' }}>THE EYE OF THE CITY</div>
+          <div className="hidden sm:block leading-tight">
+            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
+              AANKHODEKHA
+            </div>
+            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
           </div>
         </div>
 

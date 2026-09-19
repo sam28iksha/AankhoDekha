@@ -60,7 +60,7 @@ export default function Login() {
             >
               <Logomark size={22} color="white" />
             </div>
-            <div className="font-bold text-lg" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>NAGARNETRA</div>
+            <div className="font-bold text-lg" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>AANKHODEKHA</div>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
           </div>
 

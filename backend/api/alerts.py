@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Alerts API
+AANKHODEKHA — Alerts API
 WS  /alerts        — live WebSocket alert feed
 GET /alerts        — paginated historical alerts
 PUT /alerts/{id}/resolve — mark alert resolved
@@ -69,7 +69,7 @@ async def alerts_websocket(websocket: WebSocket, token: str | None = Query(None)
     await alert_manager.connect(websocket)
     await websocket.send_json({
         "type": "connected",
-        "message": "NAGARNETRA alert feed connected. Listening for events...",
+        "message": "AANKHODEKHA alert feed connected. Listening for events...",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     })
     try:

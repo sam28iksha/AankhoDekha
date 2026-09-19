@@ -1,4 +1,4 @@
-# NAGARNETRA — Setup Requirements
+# AANKHODEKHA — Setup Requirements
 ### What you need to provide before the demo is recordable
 
 ---

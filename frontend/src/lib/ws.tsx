@@ -67,7 +67,7 @@ export function AlertWebSocketProvider({ children }: { children: ReactNode }) {
         : `🚨 Blacklist hit: ${msg.plate_number}`
       const n = new Notification(title, {
         body: `${msg.camera_name || 'Unknown camera'}${msg.details ? ' · ' + msg.details : ''}`,
-        tag: `nagarnetra-alert-${msg.alert_id}`,
+        tag: `aankhodekha-alert-${msg.alert_id}`,
       })
       n.onclick = () => window.focus()
     } catch {
@@ -93,7 +93,7 @@ export function AlertWebSocketProvider({ children }: { children: ReactNode }) {
     ws.onopen = () => {
       setConnected(true)
       startPing(ws)
-      console.log('[NAGARNETRA] WebSocket connected')
+      console.log('[AANKHODEKHA] WebSocket connected')
     }
 
     ws.onmessage = (e) => {

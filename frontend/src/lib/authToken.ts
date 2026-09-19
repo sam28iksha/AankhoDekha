@@ -1,7 +1,7 @@
 // Single shared source of truth for where the login token/identity lives,
 // so auth.tsx, api.ts's interceptor, and ws.tsx's WebSocket connection can
 // never disagree on the storage key or drift out of sync with each other.
-const STORAGE_KEY = 'nagarnetra_auth'
+const STORAGE_KEY = 'aankhodekha_auth'
 
 export interface StoredAuth {
   token: string

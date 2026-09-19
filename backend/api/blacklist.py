@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Blacklist Management API
+AANKHODEKHA — Blacklist Management API
 GET    /blacklist              — list all blacklisted plates
 POST   /blacklist               — add (or update the reason for) a plate
 DELETE /blacklist/{plate_number} — remove a plate from the blacklist
