@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Audit logging helper.
+AANKHODEKHA — Audit logging helper.
 Called from routers at the point of a sensitive action — not a decorator
 or middleware, so what gets logged and with what detail stays explicit
 and readable at each call site.

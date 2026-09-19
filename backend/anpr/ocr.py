@@ -1,5 +1,5 @@
 """
-NAGARNETRA — PaddleOCR License Plate Reader
+AANKHODEKHA — PaddleOCR License Plate Reader
 Reads character text from cropped plate images.
 
 Post-processing pipeline:

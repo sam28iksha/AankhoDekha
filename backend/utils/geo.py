@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Geo utilities
+AANKHODEKHA — Geo utilities
 Shared great-circle distance / bearing math used by trajectory and speed analytics.
 """
 from __future__ import annotations

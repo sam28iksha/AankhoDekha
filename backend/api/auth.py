@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Auth & User Management API
+AANKHODEKHA — Auth & User Management API
 POST /auth/login          — obtain a JWT (OAuth2 password flow)
 GET  /auth/me             — current user's identity
 POST /auth/users          — create a user (admin only)

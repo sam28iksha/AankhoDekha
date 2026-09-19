@@ -1,5 +1,5 @@
 """
-NAGARNETRA — FastAPI auth dependencies.
+AANKHODEKHA — FastAPI auth dependencies.
 Every protected route depends on get_current_user (or require_role, which
 wraps it) rather than reimplementing token parsing per-endpoint.
 """

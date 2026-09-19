@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Health & Observability API
+AANKHODEKHA — Health & Observability API
 GET /health (Public Readiness)
 GET /health/metrics (Protected Observability)
 """

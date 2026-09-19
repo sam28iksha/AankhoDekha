@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Database Engine & Session Management
+AANKHODEKHA — Database Engine & Session Management
 Configured for high-concurrency async ingestion via PostgreSQL.
 """
 from __future__ import annotations

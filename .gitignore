@@ -20,13 +20,13 @@ env/
 !.env.example
 
 # Database
-data/nagarnetra.db
-data/nagarnetra.db-shm
-data/nagarnetra.db-wal
+data/aankhodekha.db
+data/aankhodekha.db-shm
+data/aankhodekha.db-wal
 
 # Snapshots
 data/snapshots/
-data/nagarnetra.db.bak-*
+data/aankhodekha.db.bak-*
 
 # OCR Preview page — generated preview frames, regenerated on demand
 data/previews/

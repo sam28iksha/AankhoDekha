@@ -1,4 +1,4 @@
-# RUN.md — NAGARNETRA setup & demo walkthrough
+# RUN.md — AANKHODEKHA setup & demo walkthrough
 
 ## 1. Prerequisites
 

@@ -1,5 +1,5 @@
 # .pyrefly.toml
-# NAGARNETRA backend — Docker-only Python environment config
+# AANKHODEKHA backend — Docker-only Python environment config
 #
 # All dependencies (torch, ultralytics, numpy, fastapi, sqlalchemy,
 # paddleocr, huggingface_hub, etc.) are installed inside the Docker

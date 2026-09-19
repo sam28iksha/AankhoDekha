@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-NAGARNETRA — PaddleOCR vs EasyOCR standalone comparison
+AANKHODEKHA — PaddleOCR vs EasyOCR standalone comparison
 =========================================================
 Detects plates in a real camera video using whatever model is CURRENTLY at
 models/best.pt (no code changes needed when you swap in a new checkpoint),
 crops each detection, runs it through BOTH PaddleOCR and EasyOCR with
 identical preprocessing, and writes a side-by-side report (crop image +
-both engines' reads + confidence + whether each passes NAGARNETRA's actual
+both engines' reads + confidence + whether each passes AANKHODEKHA's actual
 plate-format validation) for manual comparison.
 
 This is a standalone diagnostic — it does not touch ocr.py, the live app,
@@ -26,7 +26,7 @@ import sys
 from pathlib import Path
 
 # Path resolution — two-runtime design (matches scripts/list_detected_plates.py):
-#   Local: inserts NAGARNETRA/backend/ so backend modules resolve.
+#   Local: inserts AANKHODEKHA/backend/ so backend modules resolve.
 #   Docker: PYTHONPATH=/app (docker-compose.yml) handles it; insert is a no-op.
 _backend_path = Path(__file__).parent.parent / "backend"
 if _backend_path.exists():
@@ -56,7 +56,7 @@ from config import settings
 def run_paddleocr(ocr: PaddleOCR, image) -> tuple[str, float]:
     """Mirrors the parsing in anpr/ocr.py's PlateOCR.read(), minus validation —
     we want the RAW read here so both engines are compared before any
-    NAGARNETRA-specific post-processing is applied."""
+    AANKHODEKHA-specific post-processing is applied."""
     try:
         results = ocr.ocr(image, cls=True)
     except Exception:
@@ -173,8 +173,8 @@ async def main(args: argparse.Namespace) -> None:
     easy_valid_count = sum(1 for r in rows if r["easyocr_valid"])
 
     print(f"\nCompared {len(rows)} detections.")
-    print(f"PaddleOCR: {paddle_valid_count}/{len(rows)} passed NAGARNETRA's plate-format validation")
-    print(f"EasyOCR:   {easy_valid_count}/{len(rows)} passed NAGARNETRA's plate-format validation")
+    print(f"PaddleOCR: {paddle_valid_count}/{len(rows)} passed AANKHODEKHA's plate-format validation")
+    print(f"EasyOCR:   {easy_valid_count}/{len(rows)} passed AANKHODEKHA's plate-format validation")
     print(f"\nFull report: {report_path}")
     print(f"Crops saved to: {out_dir}  (open these to manually judge which engine actually read correctly)")
 

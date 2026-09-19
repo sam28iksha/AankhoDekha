@@ -2,12 +2,12 @@ services:
   # ── PostgreSQL + PostGIS (optional; only needed when DB_MODE=postgres) ──
   db:
     image: postgis/postgis:16-3.4
-    container_name: nagarnetra_db
+    container_name: aankhodekha_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-nagarnetra}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-nagarnetra_pass}
-      POSTGRES_DB: ${POSTGRES_DB:-nagarnetra}
+      POSTGRES_USER: ${POSTGRES_USER:-aankhodekha}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-aankhodekha_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-aankhodekha}
     ports:
       - "5432:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
       - ./backend/db/init-scripts:/docker-entrypoint-initdb.d:ro
     healthcheck:
      # Dynamically uses the variables so it doesn't break if you change usernames
-      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-nagarnetra} -d $${POSTGRES_DB:-nagarnetra}" ]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-aankhodekha} -d $${POSTGRES_DB:-aankhodekha}" ]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -26,13 +26,13 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: nagarnetra_backend
+    container_name: aankhodekha_backend
     restart: unless-stopped
     env_file:
       - .env
     environment:
       - DB_MODE=${DB_MODE:-postgres}  # Switched to Postgres
-      - SQLITE_PATH=/app/data/nagarnetra.db
+      - SQLITE_PATH=/app/data/aankhodekha.db
       - CAMERAS_JSON_PATH=/app/data/cameras.json
       - BLACKLIST_JSON_PATH=/app/data/blacklist.json
       - VIDEOS_DIR=/app/data/sample_videos
@@ -53,7 +53,7 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: nagarnetra_frontend
+    container_name: aankhodekha_frontend
     restart: unless-stopped
     environment:
       - VITE_API_URL=http://localhost:${BACKEND_PORT:-8000}

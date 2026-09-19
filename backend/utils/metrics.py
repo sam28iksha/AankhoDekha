@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Defensible System Metrics Registry
+AANKHODEKHA — Defensible System Metrics Registry
 In-memory counters and latency trackers for system observability.
 """
 

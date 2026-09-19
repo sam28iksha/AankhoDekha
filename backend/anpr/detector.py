@@ -1,5 +1,5 @@
 """
-NAGARNETRA — YOLOv8 Dual Detection System
+AANKHODEKHA — YOLOv8 Dual Detection System
 
 1. PlateDetector:
    Custom ANPR weights (best.pt) for license plate detection.

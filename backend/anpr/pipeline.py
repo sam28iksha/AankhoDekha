@@ -1,5 +1,5 @@
 """
-NAGARNETRA — ANPR Pipeline Orchestrator
+AANKHODEKHA — ANPR Pipeline Orchestrator
 Connects: FrameSource → PlateDetector → VehicleDetector → PlateOCR → temporal clustering → PlateEvent
 """
 from __future__ import annotations

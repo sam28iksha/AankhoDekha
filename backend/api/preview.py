@@ -1,5 +1,5 @@
 """
-NAGARNETRA — Detection Preview API
+AANKHODEKHA — Detection Preview API
 
 Processes a video frame-by-frame and saves annotated JPEG frames
 (plate bounding box + live OCR text + vehicle attributes burned in),

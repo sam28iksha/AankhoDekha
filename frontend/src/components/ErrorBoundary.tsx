@@ -22,7 +22,7 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error('NAGARNETRA: caught a render error', error, info.componentStack)
+    console.error('AANKHODEKHA: caught a render error', error, info.componentStack)
   }
 
   private reset = () => this.setState({ error: null })

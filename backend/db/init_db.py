@@ -1,5 +1,5 @@
 """
-NAGARNETRA — DB Initializer
+AANKHODEKHA — DB Initializer
 Creates all tables and seeds cameras from cameras.json + blacklist from blacklist.json.
 Called on application startup.
 """

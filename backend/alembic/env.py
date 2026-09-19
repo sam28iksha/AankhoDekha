@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_engine_from_config
 
 from alembic import context
 
-# --- NagarNetra Specific Imports ---
+# --- AankhoDekha Specific Imports ---
 from db.base import Base
 from db import models  # Imports all your models so metadata registers them
 from config import settings

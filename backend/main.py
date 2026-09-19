@@ -1,5 +1,5 @@
 """
-NAGARNETRA — FastAPI Application Entry Point
+AANKHODEKHA — FastAPI Application Entry Point
 Team: The Underthinker | Smart India Hackathon 2026
 """
 from __future__ import annotations
@@ -35,7 +35,7 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     """Application lifespan — startup and shutdown events."""
     logger.info("=" * 60)
-    logger.info("  NAGARNETRA — The Eye of the City")
+    logger.info("  AANKHODEKHA — The Eye of the City")
     logger.info("  Team: The Underthinker | SIH 2026")
     logger.info("=" * 60)
 
@@ -47,11 +47,11 @@ async def lifespan(app: FastAPI):
 
     yield
 
-    logger.info("NAGARNETRA shutting down.")
+    logger.info("AANKHODEKHA shutting down.")
 
 
 app = FastAPI(
-    title="NAGARNETRA API",
+    title="AANKHODEKHA API",
     description=(
         "Multi-Camera ANPR & Traffic Intelligence Platform\n"
         "Smart India Hackathon 2026 · Team: The Underthinker"
@@ -108,7 +108,7 @@ app.include_router(health_router)               # Registered health router
 @app.get("/")
 async def root():
     return {
-        "service": "NAGARNETRA — The Eye of the City",
+        "service": "AANKHODEKHA — The Eye of the City",
         "team": "The Underthinker",
         "hackathon": "Smart India Hackathon 2026",
         "docs": "/docs",

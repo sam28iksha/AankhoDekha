@@ -57,7 +57,7 @@ export default function Layout() {
           </div>
           <div className="hidden sm:block leading-tight">
             <div className="font-bold text-sm" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
-              NAGARNETRA
+              AANKHODEKHA
             </div>
             <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
           </div>

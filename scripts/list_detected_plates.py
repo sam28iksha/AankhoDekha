@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NAGARNETRA — Detected Plates Lister
+AANKHODEKHA — Detected Plates Lister
 ======================================
 After running ingest_videos.py, use this script to see which plates were
 detected with highest confidence and frequency.
@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 # Path resolution — two-runtime design:
-#   Local: inserts NAGARNETRA/backend/ so backend modules resolve.
+#   Local: inserts AANKHODEKHA/backend/ so backend modules resolve.
 #   Docker: PYTHONPATH=/app (docker-compose.yml) handles it; insert is a no-op.
 _backend_path = Path(__file__).parent.parent / "backend"
 if _backend_path.exists():
@@ -61,7 +61,7 @@ async def list_plates(top: int = 30, min_sightings: int = 1, export: str | None 
 
     print()
     print("=" * 70)
-    print("  NAGARNETRA — Detected Plates (sorted by sighting count)")
+    print("  AANKHODEKHA — Detected Plates (sorted by sighting count)")
     print("=" * 70)
     print(f"  {'Rank':<5} {'Plate':<15} {'Sightings':>9} {'Cameras':>8} {'MaxConf':>8} {'Last Seen':<22}")
     print("-" * 70)

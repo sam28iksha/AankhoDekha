@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-NAGARNETRA — Video Ingestion Script
+AANKHODEKHA — Video Ingestion Script
 ====================================
 Processes all video files in data/sample_videos/ through the ANPR pipeline
 and writes plate events to the database.
@@ -37,7 +37,7 @@ from pathlib import Path
 
 # Add backend to Python path
 # Path resolution — two-runtime design:
-#   Local: inserts NAGARNETRA/backend/ so backend modules resolve.
+#   Local: inserts AANKHODEKHA/backend/ so backend modules resolve.
 #   Docker: PYTHONPATH=/app (docker-compose.yml) handles it; insert is a no-op.
 _backend_path = Path(__file__).parent.parent / "backend"
 if _backend_path.exists():
@@ -161,7 +161,7 @@ async def ingest_camera(
 
 
 async def main(args: argparse.Namespace) -> None:
-    logger.info("NAGARNETRA Ingestion Script")
+    logger.info("AANKHODEKHA Ingestion Script")
     logger.info("=" * 50)
 
     # Init DB
@@ -223,7 +223,7 @@ async def main(args: argparse.Namespace) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="NAGARNETRA video ingestion script")
+    parser = argparse.ArgumentParser(description="AANKHODEKHA video ingestion script")
     parser.add_argument("--camera", type=str, default=None, help="Process only this camera_id (e.g. cam_01)")
     parser.add_argument("--sample-rate", type=int, default=settings.FRAME_SAMPLE_RATE, help="Process every Nth frame")
     parser.add_argument("--save-snapshots", action="store_true", help="Save JPEG snapshots for each detected plate")
