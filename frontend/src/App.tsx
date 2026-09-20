@@ -1,12 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import Landing from './pages/Landing'
 import Dashboard from './pages/Dashboard'
 import VehicleSearch from './pages/VehicleSearch'
 import Analytics from './pages/Analytics'
 import AlertsView from './pages/AlertsView'
 import BlacklistView from './pages/BlacklistView'
 import OCRPreview from './pages/OCRPreview'
-import Login from './pages/Login'
 import AuditLog from './pages/AuditLog'
 import UserManagement from './pages/UserManagement'
 import { AuthProvider, useAuth, hasRole } from './lib/auth'
@@ -30,8 +30,13 @@ function AppRoutes() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
-      <Route path="/" element={user ? <AuthenticatedShell /> : <Navigate to="/login" replace />}>
+      {/* No separate /login route — signing in happens directly on the
+          landing page's own embedded panel. Logged-out visitors land on
+          Landing regardless of which of these paths they hit (the parent
+          route's element fully replaces the tree, so the child routes
+          below never render without a session); once authenticated, the
+          same paths resolve to the real dashboard shell as before. */}
+      <Route path="/" element={user ? <AuthenticatedShell /> : <Landing />}>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="vehicle" element={<VehicleSearch />} />
@@ -48,7 +53,7 @@ function AppRoutes() {
           element={hasRole(user, 'admin') ? <UserManagement /> : <Navigate to="/dashboard" replace />}
         />
       </Route>
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }

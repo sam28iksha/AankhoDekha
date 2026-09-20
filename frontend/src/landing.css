@@ -1,0 +1,149 @@
+/* ── NAGARNETRA public landing page ───────────────────────────
+   Scoped entirely under .landing so these tokens/rules never leak
+   into (or collide with) the dark internal dashboard's index.css. */
+
+@font-face {
+  font-family: 'Samarkan';
+  src: url('/fonts/SamarkanNormal.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.landing {
+  --landing-bg: #f4f1ea;        /* off-white/paper, not pure white */
+  --landing-ink: #1c1c1a;       /* asphalt/charcoal — primary text */
+  --landing-ink-soft: #5a5a55;  /* secondary text */
+  --landing-ink-faint: #8c8a80; /* muted/tertiary text */
+  --landing-border: #d8d4c8;    /* hairline border */
+  --landing-accent: #f5b400;    /* amber/safety-yellow — sparing use only */
+  --landing-surface: #ebe7dd;   /* slightly deeper paper, for cards/sections */
+
+  background: var(--landing-bg);
+  color: var(--landing-ink);
+  font-family: 'Source Sans 3', system-ui, -apple-system, sans-serif;
+  min-height: 100%;
+  width: 100%;
+}
+
+.landing h1,
+.landing h2,
+.landing h3,
+.landing .landing-display {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  letter-spacing: 0.01em;
+  font-weight: 600;
+}
+
+/* Brand wordmark ("AankhoDekhà") — the self-hosted Samarkan face, confirmed
+   (by comparing rendered output against the source logo crop) to be the
+   actual font the logo artwork was set in. It has no distinct capital
+   letterforms at all (A/a and D/d are literally the same glyph in this
+   file) — that's a fixed property of this exact font, not fixable via CSS.
+   No solid background card — sits directly on the hero video/dark nav —
+   but a soft light halo (layered drop-shadows, not a hard-edged shape)
+   lifts the dark green ink off busy photo backgrounds so it doesn't
+   camouflage into them. */
+.landing .brand-wordmark {
+  font-family: 'Samarkan', cursive;
+  color: #0F3822;
+  letter-spacing: 0.02em;
+  font-weight: normal;
+  /* em-based blur radii so the glow scales with font-size — this wordmark
+     renders at wildly different sizes (7xl hero vs. text-base nav), and
+     fixed px blur values that looked right at hero size were swallowing
+     the much smaller nav letterforms whole. */
+  filter:
+    drop-shadow(0 0 0.05em rgba(244, 241, 234, 1))
+    drop-shadow(0 0 0.1em rgba(244, 241, 234, 1))
+    drop-shadow(0 0 0.22em rgba(244, 241, 234, 0.85))
+    drop-shadow(0 0.03em 0.08em rgba(0, 0, 0, 0.4));
+}
+
+/* Since Samarkan has no real capitals, the initial "A"/"D" switch to
+   Oswald Light — picked by comparing candidates directly against the
+   logo's own plain geometric capitals (narrow, pointed apex); everything
+   else stays in Samarkan, unchanged. A synthetic bar (::before) continues
+   the shirorekha line behind the letter, at the same height it runs
+   through the neighboring Samarkan glyphs, so the initial reads as
+   "pasted over" the line instead of floating separately above/below it. */
+.landing .brand-wordmark-cap {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 300;
+  font-size: 0.85em;
+  display: inline-block;
+  position: relative;
+  top: 0.02em;
+}
+
+.landing .brand-wordmark-cap::before {
+  content: '';
+  position: absolute;
+  left: -0.06em;
+  right: -0.06em;
+  top: 0.32em;
+  /* em-based, with a 1px floor — a fixed 3px was fine at hero size but
+     was a third of the whole letter's height at the small nav size,
+     reading as a thick bar slicing through it rather than a thin line. */
+  height: max(1px, 0.05em);
+  background: #0F3822;
+  z-index: -1;
+}
+
+.landing ::selection {
+  background: var(--landing-accent);
+  color: var(--landing-ink);
+}
+
+/* ── Scroll-reveal primitive ───────────────────────────────────
+   Consumers toggle .landing-reveal-visible via useScrollReveal.
+   Guarded primarily by the reduced-motion media query below, so
+   content is never permanently hidden if JS fails to run. */
+.landing-reveal {
+  opacity: 0;
+  transform: translateY(16px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.landing-reveal-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
+
+/* ── 3D map stage (Trajectory section) ─────────────────────────
+   A static isometric-style tilt — not cursor or scroll-linked — that
+   settles into place once when the section reveals, giving the camera
+   network map a dimensional, "instrument panel" feel. */
+.landing-map-stage {
+  perspective: 1600px;
+}
+
+.landing-map-tilt {
+  transform-origin: 50% 10%;
+  transform: rotateX(0deg) scale(0.96);
+  opacity: 0.85;
+  transform-style: preserve-3d;
+  box-shadow: 0 8px 16px rgba(28, 28, 26, 0.06);
+  transition: transform 1100ms cubic-bezier(0.16, 1, 0.3, 1), opacity 900ms ease, box-shadow 1100ms ease;
+}
+
+.landing-map-tilt-settled {
+  transform: rotateX(26deg) scale(1);
+  opacity: 1;
+  box-shadow: 0 55px 70px -35px rgba(28, 28, 26, 0.35), 0 15px 25px -10px rgba(28, 28, 26, 0.18);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-map-tilt {
+    transition: none;
+  }
+}
+
