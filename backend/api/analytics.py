@@ -71,7 +71,10 @@ async def overview_endpoint(
     """
     density = await get_density(db, hours=24)
     congestion = await get_congestion(db)
-    speeds = await get_speed_estimates(db)
+    # Wider window than the other cards: a speed trip needs two DIFFERENT-
+    # camera sightings of the same plate, which are much rarer than any
+    # single-camera event, so this metric needs more lookback to find any.
+    speeds = await get_speed_estimates(db, hours=720)
     od = await get_od_matrix(db, hours=24)
 
     busiest = density[0] if density else None
@@ -109,7 +112,11 @@ async def congestion_endpoint(
 
 @router.get("/speed")
 async def speed_endpoint(
-    hours: int = Query(24, ge=1, le=24),
+    # Wider than density/od-matrix/timeseries's 168h cap (this was hard-capped
+    # at 24 before, the one inconsistent outlier): a speed trip needs two
+    # DIFFERENT-camera sightings of the same plate, which are much rarer than
+    # any single-camera event, so this metric needs more lookback to find any.
+    hours: int = Query(720, ge=1, le=720),
     db: AsyncSession = Depends(get_db),
     _user: User = Depends(require_role("viewer")),
 ):
