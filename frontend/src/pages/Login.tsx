@@ -34,7 +34,7 @@ export default function Login() {
           >
             <Eye size={22} color="white" />
           </div>
-          <div className="font-bold text-lg" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>AANKHODEKHA</div>
+          <div className="font-bold text-lg" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>AankhoDekha</div>
           <div className="text-xs" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
         </div>
 
