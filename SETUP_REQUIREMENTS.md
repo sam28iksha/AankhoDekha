@@ -1,4 +1,4 @@
-# AANKHODEKHA — Setup Requirements
+# AankhoDekha — Setup Requirements
 ### What you need to provide before the demo is recordable
 
 ---

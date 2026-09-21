@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { useState, useCallback, useEffect } from 'react'
 import {
   Map, Search, BarChart3, Bell, Ban, ScanLine,
@@ -62,7 +62,10 @@ export default function Layout() {
     <div className="flex h-screen w-screen overflow-hidden">
       {/* ── Sidebar (dark forest-green brand rail) ──────────────────────── */}
       <aside className="command-sidebar flex-shrink-0">
-        <div className="command-sidebar-logo">
+        {/* Logo — links back to the public landing page. Passes
+            skipAutoEnter so Landing's scroll-past-hero listener doesn't
+            immediately bounce a signed-in visitor straight back here. */}
+        <Link to="/home" state={{ skipAutoEnter: true }} className="command-sidebar-logo" title="Back to landing page">
           <img src={brandLogo} alt="AankhoDekha" className="brand-logo-img" />
           <div className="command-sidebar-brandtext">
             <div className="brand-wordmark">
@@ -70,7 +73,7 @@ export default function Layout() {
             </div>
             <div className="command-sidebar-tagline">The Eye of the City</div>
           </div>
-        </div>
+        </Link>
 
         <nav className="command-sidebar-nav">
           <div className="command-sidebar-section">MONITORING</div>

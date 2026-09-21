@@ -1,4 +1,4 @@
-# RUN.md — AANKHODEKHA setup & demo walkthrough
+# RUN.md — AankhoDekha setup & demo walkthrough
 
 ## 1. Prerequisites
 

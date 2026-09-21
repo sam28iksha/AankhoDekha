@@ -1,7 +1,7 @@
-# AANKHODEKHA — Multi-Camera ANPR & Traffic Intelligence Platform
+# AankhoDekha — Multi-Camera ANPR & Traffic Intelligence Platform
 ### Smart India Hackathon 2026 · Team: The Underthinker
 
-*Nagar (city) + Netra (eye) — "the eye of the city."*
+*Aankhon (eyes) + Dekha (seen) — "aankhon dekha," a Hindi idiom for an eyewitness account: seen firsthand, not told secondhand.*
 
 ---
 
@@ -9,7 +9,7 @@
 
 Cities run hundreds of CCTV/ANPR cameras, but today each camera works **solo** — it sees a plate, logs it, and forgets it. There is no system that stitches together sightings of the *same* vehicle across *different* cameras into one timeline. So when a vehicle is flagged (stolen, blacklisted, involved in a crime), there is no fast way to answer: *"Where has this vehicle been, and where is it likely headed?"*
 
-AANKHODEKHA turns a city-wide network of cameras into one connected brain. It reads plates, remembers every sighting, reconstructs a vehicle's path across the whole city, flags blacklisted or physically-implausible (cloned-plate) vehicles in real time, and gives traffic planners a live picture of how the city moves as a whole.
+AankhoDekha turns a city-wide network of cameras into one connected brain. It reads plates, remembers every sighting, reconstructs a vehicle's path across the whole city, flags blacklisted or physically-implausible (cloned-plate) vehicles in real time, and gives traffic planners a live picture of how the city moves as a whole.
 
 ---
 
@@ -91,7 +91,7 @@ See `RUN.md` for exact setup and demo-walkthrough steps.
 ## 5. Repo structure
 
 ```
-AANKHODEKHA/
+AankhoDekha/
 ├── backend/                    # FastAPI service
 │   ├── anpr/                   # detection + OCR + pipeline
 │   │   ├── frame_source.py     #   FrameSource (file works; RTSP stubbed)
