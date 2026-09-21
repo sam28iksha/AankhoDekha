@@ -8,8 +8,8 @@ import { useAlertWebSocket, WSMessage } from '../lib/ws'
 import { useAuth, hasRole } from '../lib/auth'
 import Toast from './Toast'
 import ErrorBoundary from './ErrorBoundary'
-import Logomark from './Logomark'
 import CitySkylinePanel from './CitySkylinePanel'
+import brandLogo from '../assets/aankhodekha-logo.png'
 
 // Command-center touch — a live clock reinforces "this is a monitoring
 // system watching in real time" the moment the header loads, before any
@@ -63,14 +63,12 @@ export default function Layout() {
       {/* ── Sidebar (dark forest-green brand rail) ──────────────────────── */}
       <aside className="command-sidebar flex-shrink-0">
         <div className="command-sidebar-logo">
-          <div className="command-logo-badge">
-            <Logomark size={16} color="white" />
-          </div>
-          <div className="hidden sm:block leading-tight">
-            <div className="font-bold text-sm" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>
-              AANKHODEKHA
+          <img src={brandLogo} alt="AankhoDekha" className="brand-logo-img" />
+          <div className="command-sidebar-brandtext">
+            <div className="brand-wordmark">
+              <span className="brand-wordmark-cap">A</span>ankho<span className="brand-wordmark-cap">D</span>ekhà
             </div>
-            <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
+            <div className="command-sidebar-tagline">The Eye of the City</div>
           </div>
         </div>
 
@@ -107,16 +105,14 @@ export default function Layout() {
             </>
           )}
 
-          {/* Smart-city branding — Dashboard/Live Map only. `.command-sidebar-nav`
-              is the flex:1 element that actually owns the empty space below
-              the nav items, so this has to be its last child (with
+          {/* Smart-city branding — every page. `.command-sidebar-nav` is the
+              flex:1 element that actually owns the empty space below the
+              nav items, so this has to be its last child (with
               margin-top: auto) to land there — a sibling after </nav> would
               just render with no space to fill. */}
-          {location.pathname === '/dashboard' && (
-            <div className="command-sidebar-skyline">
-              <CitySkylinePanel compact />
-            </div>
-          )}
+          <div className="command-sidebar-skyline">
+            <CitySkylinePanel compact />
+          </div>
         </nav>
 
         <div className="command-sidebar-footer">
@@ -128,8 +124,8 @@ export default function Layout() {
           </div>
           <div className="flex items-center justify-between gap-2">
             <div className="leading-tight min-w-0">
-              <div className="text-[11px] truncate" style={{ color: '#FFFFFF' }}>{user?.username}</div>
-              <div className="text-[11px] capitalize" style={{ color: 'rgba(234, 242, 236, 0.55)' }}>{user?.role}</div>
+              <div className="text-[13px] truncate" style={{ color: '#FFFFFF', fontWeight: 600 }}>{user?.username}</div>
+              <div className="text-[12px] capitalize" style={{ color: 'rgba(234, 242, 236, 0.55)', fontWeight: 500 }}>{user?.role}</div>
             </div>
             <button
               id="logout-btn"

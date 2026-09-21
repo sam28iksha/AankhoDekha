@@ -254,10 +254,10 @@ export const getBlacklistStatus = (plate: string) =>
   api.get(`/vehicle/${encodeURIComponent(plate)}/blacklist-status`).then(r => r.data)
 
 export const searchPlates = (q: string): Promise<PlateSearchResult[]> =>
-  api.get('/vehicles/search', { params: { q } }).then(r => r.data)
+  api.get('/vehicle/search', { params: { q } }).then(r => r.data)
 
 export const getTopPlates = (limit = 20): Promise<PlateSearchResult[]> =>
-  api.get('/vehicles/top', { params: { limit } }).then(r => r.data)
+  api.get('/vehicle/top', { params: { limit } }).then(r => r.data)
 
 export const getAlerts = (params?: {
   alert_type?: string

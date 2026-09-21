@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { LogIn } from 'lucide-react'
 import RadarLoader from '../components/RadarLoader'
-import Logomark from '../components/Logomark'
 import CitySkylinePanel from '../components/CitySkylinePanel'
 import { useAuth } from '../lib/auth'
+import brandLogo from '../assets/aankhodekha-logo.png'
 
 // Fixed (not random-per-render) scatter of "camera" nodes across the login
 // background — stable positions so the page doesn't visibly re-shuffle on
@@ -54,13 +54,10 @@ export default function Login() {
 
         <div className="glass-card p-8 w-full" style={{ maxWidth: 380 }}>
           <div className="flex flex-col items-center mb-6">
-            <div
-              className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
-              style={{ background: 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 60%, var(--brand-light) 100%)', boxShadow: '0 0 18px rgba(79, 138, 98, 0.4)' }}
-            >
-              <Logomark size={22} color="white" />
+            <img src={brandLogo} alt="AankhoDekha" className="brand-logo-img brand-logo-img--lg mb-3" />
+            <div className="brand-wordmark" style={{ fontSize: '1.25rem' }}>
+              <span className="brand-wordmark-cap">A</span>ankho<span className="brand-wordmark-cap">D</span>ekhà
             </div>
-            <div className="font-bold text-lg" style={{ color: 'var(--text-primary)', letterSpacing: '0.05em' }}>AANKHODEKHA</div>
             <div className="text-xs" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
           </div>
 

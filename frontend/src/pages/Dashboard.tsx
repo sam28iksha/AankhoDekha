@@ -16,14 +16,28 @@ const VEHICLE_KIND_LABEL: Record<SelectedVehicleInfo['kind'], string> = {
   blacklisted: 'Blacklisted vehicle',
   suspicious: 'Suspicious pattern',
 }
-// 'normal' matches the vehicle marker's own muted-green fill on the map
-// (#3F7050) rather than the old cyan — cyan is reserved for camera/AI
-// infrastructure, not vehicles.
+// 'normal' matches the vehicle marker's own dark forest-green fill on the
+// map (#0B5D3B) — the same hue as the camera network and confirmed routes —
+// rather than the old cyan; cyan is reserved for camera/AI infrastructure
+// text/UI, not vehicles.
 const VEHICLE_KIND_COLOR: Record<SelectedVehicleInfo['kind'], string> = {
-  normal: '#3F7050',
+  normal: '#0B5D3B',
   blacklisted: 'var(--accent-red)',
   suspicious: 'var(--accent-amber)',
 }
+
+// Shared text/border/shadow treatment for the top KPI row's 4 stat cards —
+// only the thin top accent line varies per card, matching that card's own
+// semantic icon color. Scoped to Dashboard's StatCard calls via the
+// `theme` prop (see StatCard.tsx) so Analytics' StatCards keep their
+// original look untouched.
+const KPI_CARD_THEME = (accent: string) => ({
+  label: '#365B4D',
+  value: '#123C2E',
+  border: '#B8C9C0',
+  shadow: '0 3px 12px rgba(20, 60, 45, 0.10)',
+  accent,
+})
 
 // Color-coded by real alert type — a blacklist hit is genuinely critical
 // (red), a route anomaly is a lower-severity heads-up (amber); showing
@@ -190,8 +204,7 @@ export default function Dashboard() {
           onSimSelectVehicle={handleSimSelectVehicle}
           onSimSelectedVehicleTick={handleSimSelectedVehicleTick}
           simFollowing={simFollowing}
-          basemapStyle="default"
-          lightBasemap
+          basemapStyle="command-center"
         />
 
         {/* Simulation toggle — bottom-left, out of the way of stat cards
@@ -223,7 +236,8 @@ export default function Dashboard() {
             value={summary?.vehicles_seen_today ?? 0}
             loading={loading}
             icon={Car}
-            color="var(--accent-blue-light)"
+            color="#18A66A"
+            theme={KPI_CARD_THEME('#18A66A')}
           />
           <StatCard
             id="stat-active-alerts"
@@ -231,7 +245,8 @@ export default function Dashboard() {
             value={summary?.active_alerts ?? 0}
             loading={loading}
             icon={AlertTriangle}
-            color="var(--accent-red)"
+            color="#E05252"
+            theme={KPI_CARD_THEME('#E05252')}
           />
           <StatCard
             id="stat-total-events"
@@ -239,7 +254,8 @@ export default function Dashboard() {
             value={summary?.total_events ?? 0}
             loading={loading}
             icon={Activity}
-            color="var(--accent-green)"
+            color="#18A66A"
+            theme={KPI_CARD_THEME('#18A66A')}
           />
           <StatCard
             id="stat-distinct-plates"
@@ -247,7 +263,8 @@ export default function Dashboard() {
             value={summary?.distinct_plates_total ?? 0}
             loading={loading}
             icon={Zap}
-            color="var(--accent-amber)"
+            color="#D99A22"
+            theme={KPI_CARD_THEME('#D99A22')}
           />
         </div>
       </div>
@@ -320,7 +337,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {simSelected ? (
+            {simSelected && (
               <div className="glass-card p-3" style={{ borderColor: VEHICLE_KIND_COLOR[simSelected.kind] }}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-1.5">
@@ -353,10 +370,6 @@ export default function Dashboard() {
                   {simFollowing ? 'Following — click to stop' : 'Follow on map'}
                 </button>
               </div>
-            ) : (
-              <div className="text-xs text-center py-2" style={{ color: 'var(--text-muted)' }}>
-                Click any vehicle on the map to track it
-              </div>
             )}
           </div>
         )}
@@ -386,22 +399,27 @@ export default function Dashboard() {
 
         {/* ── System Observability Telemetry Widget ────────────── */}
         <div
-          className="p-3 mt-auto"
+          className="p-3 mt-auto mx-2.5 mb-2.5"
           style={{
-            borderTop: '1px solid var(--border)',
-            background: 'rgba(0,0,0,0.2)',
+            background: '#F7F8F4',
+            border: '1px solid #B8C9C0',
+            borderRadius: 12,
+            boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)',
           }}
         >
           <div className="flex items-center justify-between mb-2">
             <div
-              className="text-xs font-semibold flex items-center gap-1.5"
-              style={{ color: 'var(--text-muted)' }}
+              className="text-sm flex items-center gap-1.5 uppercase"
+              style={{ color: '#0F5C42', letterSpacing: '0.04em', fontWeight: 700 }}
             >
-              <Server size={12} className="text-cyan-400" />
-              SYSTEM TELEMETRY
+              <Server size={12} style={{ color: '#0F5C42' }} />
+              System Telemetry
             </div>
 
-            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-mono">
+            <span
+              className="text-[12px] px-1.5 py-0.5 rounded-full"
+              style={{ background: '#D9F1E5', color: '#087447', fontWeight: 700 }}
+            >
               {metrics ? 'ONLINE' : 'CONNECTING'}
             </span>
           </div>
@@ -413,112 +431,106 @@ export default function Dashboard() {
               <div className="grid grid-cols-2 gap-2">
 
                 {/* Frames Processed */}
-                <div className="p-2 rounded bg-white/5 border border-white/5">
+                <div
+                  className="p-2.5"
+                  style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 10, boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)' }}
+                >
                   <div
-                    className="text-[10px]"
-                    style={{ color: 'var(--text-muted)' }}
+                    className="text-[13px]"
+                    style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     Frames Proc.
                   </div>
 
-                  <div className="font-mono font-bold text-cyan-400">
+                  <div className="font-mono text-[15px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.anpr.frames_processed}
-                  </div>
-                </div>
-
-                {/* OCR Success Rate */}
-                <div
-                  className="p-2 rounded bg-white/5 border border-white/5"
-                  title="Percentage of OCR attempts producing accepted reads"
-                >
-                  <div
-                    className="text-[10px]"
-                    style={{ color: 'var(--text-muted)' }}
-                  >
-                    OCR Success Rate
-                  </div>
-
-                  <div className="font-mono font-bold text-emerald-400">
-                    {metrics.anpr.ocr_success_rate}%
                   </div>
                 </div>
 
                 {/* Accepted Read Confidence */}
                 <div
-                  className="p-2 rounded bg-white/5 border border-white/5"
+                  className="p-2.5"
+                  style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 10, boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)' }}
                   title="Average PaddleOCR confidence of accepted plate reads"
                 >
                   <div
-                    className="text-[10px]"
-                    style={{ color: 'var(--text-muted)' }}
+                    className="text-[13px]"
+                    style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     Accepted Confidence
                   </div>
 
-                  <div className="font-mono font-bold text-emerald-300">
+                  <div className="font-mono text-[15px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.anpr.accepted_read_confidence}%
                   </div>
                 </div>
 
                 {/* YOLO Detections */}
                 <div
-                  className="p-2 rounded bg-white/5 border border-white/5"
+                  className="p-2.5"
+                  style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 10, boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)' }}
                   title="Number of license-plate detections produced by YOLO"
                 >
                   <div
-                    className="text-[10px]"
-                    style={{ color: 'var(--text-muted)' }}
+                    className="text-[13px]"
+                    style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     YOLO Detections
                   </div>
 
-                  <div className="font-mono font-bold text-blue-400">
+                  <div className="font-mono text-[15px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.anpr.plates_detected}
+                  </div>
+                </div>
+
+                {/* Active Cameras */}
+                <div
+                  className="p-2.5"
+                  style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 10, boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)' }}
+                >
+                  <div
+                    className="text-[13px]"
+                    style={{ color: '#365B4D', fontWeight: 600 }}
+                  >
+                    Active Cameras (30s)
+                  </div>
+
+                  <div className="font-mono text-[15px]" style={{ fontWeight: 700 }}>
+                    <span style={{ color: '#18A66A' }}>{metrics.cameras.active_now}</span>
+                    <span style={{ color: '#17352B' }}> / {metrics.cameras.registered}</span>
                   </div>
                 </div>
 
               </div>
 
-              {/* Active Cameras */}
-              <div
-                className="flex justify-between items-center px-1 text-[11px]"
-                style={{ color: 'var(--text-secondary)' }}
-              >
-                <span>Active Cameras (30s):</span>
-
-                <span className="font-mono font-semibold text-amber-400">
-                  {metrics.cameras.active_now} / {metrics.cameras.registered}
-                </span>
-              </div>
-
               {/* Pipeline Latency */}
               <div
-                className="pt-2 border-t border-white/5 grid grid-cols-3 gap-1 text-[10px]"
-                style={{ color: 'var(--text-muted)' }}
+                className="pt-2 grid grid-cols-3 gap-1 text-[11px]"
+                style={{ borderTop: '1px solid #B8C9C0', color: '#4F665C' }}
               >
                 {/* YOLO Latency */}
-                <div className="bg-white/5 p-1 rounded text-center">
-                  <div className="text-[9px]">YOLO</div>
+                <div className="p-1 text-center" style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 8 }}>
+                  <div className="text-[10px]" style={{ fontWeight: 600 }}>YOLO</div>
 
-                  <span className="font-mono text-cyan-300">
+                  <span className="font-mono" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.latency.detection_ms}ms
                   </span>
                 </div>
 
                 {/* OCR Latency */}
-                <div className="bg-white/5 p-1 rounded text-center">
-                  <div className="text-[9px]">OCR</div>
+                <div className="p-1 text-center" style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 8 }}>
+                  <div className="text-[10px]" style={{ fontWeight: 600 }}>OCR</div>
 
-                  <span className="font-mono text-cyan-300">
+                  <span className="font-mono" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.latency.ocr_ms}ms
                   </span>
                 </div>
 
                 {/* Pipeline Latency */}
-                <div className="bg-white/5 p-1 rounded text-center">
-                  <div className="text-[9px]">Pipeline</div>
+                <div className="p-1 text-center" style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 8 }}>
+                  <div className="text-[10px]" style={{ fontWeight: 600 }}>Pipeline</div>
 
-                  <span className="font-mono text-cyan-300">
+                  <span className="font-mono" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.latency.pipeline_ms}ms
                   </span>
                 </div>

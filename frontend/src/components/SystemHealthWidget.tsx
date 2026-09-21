@@ -13,7 +13,7 @@ export function SystemHealthWidget() {
         const data = await fetchSystemMetrics();
         setMetrics(data);
         setError(false);
-      } catch (err) {
+      } catch {
         setError(true);
       }
     };
@@ -78,17 +78,6 @@ export function SystemHealthWidget() {
           <div>Active Cameras (30s)</div>
           <div className="text-lg font-bold text-yellow-400">
             {metrics.cameras.active_now} / {metrics.cameras.registered}
-          </div>
-        </div>
-
-        {/* OCR Success Rate */}
-        <div
-          className="bg-gray-800 p-2 rounded"
-          title="Percentage of OCR attempts producing accepted reads"
-        >
-          <div>OCR Success Rate</div>
-          <div className="text-lg font-bold text-green-400">
-            {metrics.anpr.ocr_success_rate}%
           </div>
         </div>
 

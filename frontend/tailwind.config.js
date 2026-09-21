@@ -7,6 +7,22 @@ export default {
   ],
   theme: {
     extend: {
+      // Global type-scale bump (~10-20%, per size) — deliberately only
+      // `fontSize`, never `spacing`: Tailwind's padding/margin/gap/width
+      // utilities are a separate rem scale, so this raises text size
+      // consistently across every page without moving anything or
+      // resizing any card/container. text-sm lands at exactly 16px (the
+      // "minimum base size for normal UI text" target) and text-2xl at
+      // 28px (top-of-range for KPI-style numbers) without per-component
+      // overrides.
+      fontSize: {
+        xs: ['0.85rem', { lineHeight: '1.15rem' }],
+        sm: ['1rem', { lineHeight: '1.4rem' }],
+        base: ['1.125rem', { lineHeight: '1.7rem' }],
+        lg: ['1.25rem', { lineHeight: '1.85rem' }],
+        xl: ['1.4rem', { lineHeight: '2rem' }],
+        '2xl': ['1.75rem', { lineHeight: '2.2rem' }],
+      },
       colors: {
         // AANKHODEKHA brand palette
         brand: {

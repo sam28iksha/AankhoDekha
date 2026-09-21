@@ -450,7 +450,6 @@ export default function VehicleSearch() {
             legStatuses={legStatuses}
             stopStatuses={stopStatuses}
             stopLabels={stopLabels}
-            showTrajectoryLegend={!showRoutes}
             showRoutedPaths={showRoutes}
             basemapStyle="command-center"
           />

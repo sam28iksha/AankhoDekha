@@ -66,16 +66,17 @@ const FOLLOW_ZOOM_MIN = 14
 // Body / highlight-stroke / windshield colors per vehicle state. Selected
 // overrides kind entirely (a tracked vehicle is white+gold regardless of
 // whether it's also blacklisted/suspicious — it's the single most
-// important thing on the map while tracked). Normal traffic is a distinctly
-// MUTED green (#3F7050) — visibly different from both the camera network's
-// darker #0B5D3B and the route line's #0B5D3B, so "car" never reads as the
-// same visual weight as "camera" or "confirmed route" even though all three
-// are technically green. Normal is also the only kind with a base opacity
-// below 1 (applied where it's drawn) — everything else stays fully opaque
-// so warnings and the tracked vehicle never compete with background traffic.
+// important thing on the map while tracked). Normal traffic is the same
+// dark forest green (#0B5D3B) as the camera network and the confirmed-route
+// line — one consistent "NAGARNETRA intelligence" green across every
+// normal/confirmed element on the map, with brand-green (#4F8A62) reserved
+// for the highlight stroke so a vehicle still reads as its own marker up
+// close. Normal is also the only kind with a base opacity below 1 (applied
+// where it's drawn) — everything else stays fully opaque so warnings and
+// the tracked vehicle never compete with background traffic.
 const CAR_COLORS: Record<'selected' | VehicleKind, { body: string; highlight: string; glass: string }> = {
   selected: { body: '#FFFFFF', highlight: '#FFD21F', glass: '#EAF2EC' },
-  normal: { body: '#3F7050', highlight: '#4F8A62', glass: '#DCE8E1' },
+  normal: { body: '#0B5D3B', highlight: '#4F8A62', glass: '#DCE8E1' },
   suspicious: { body: '#FFB020', highlight: '#FFD166', glass: '#FFF7D6' },
   blacklisted: { body: '#E63946', highlight: '#FF6B6B', glass: '#FFE5E5' },
 }
@@ -87,29 +88,6 @@ const CAR_COLORS: Record<'selected' | VehicleKind, { body: string; highlight: st
 const NORMAL_OPACITY_AT_REST = 0.55
 const NORMAL_OPACITY_WHILE_TRACKING = 0.32
 const SUSPICIOUS_OPACITY = 0.9
-
-// A top-down car silhouette — rounded rear, tapered/rounded nose — traced
-// once per vehicle per frame in local (rotated) coordinate space where +X
-// is "forward." Still just canvas path commands (no new DOM/SVG elements),
-// so drawing ~180 of these every frame costs about the same as the plain
-// triangle it replaces.
-function traceCarBody(ctx: CanvasRenderingContext2D, len: number, wid: number) {
-  const hw = wid / 2
-  const nose = len * 0.5
-  const tail = -len * 0.5
-  const r = Math.min(wid, len) * 0.24
-  ctx.beginPath()
-  ctx.moveTo(tail + r, -hw)
-  ctx.lineTo(len * 0.08, -hw)
-  ctx.quadraticCurveTo(nose, -hw, nose, -hw * 0.25)
-  ctx.lineTo(nose, hw * 0.25)
-  ctx.quadraticCurveTo(nose, hw, len * 0.08, hw)
-  ctx.lineTo(tail + r, hw)
-  ctx.quadraticCurveTo(tail, hw, tail, hw - r)
-  ctx.lineTo(tail, -hw + r)
-  ctx.quadraticCurveTo(tail, -hw, tail + r, -hw)
-  ctx.closePath()
-}
 
 // Normal traffic's own size curve — smaller than before at every zoom
 // level (spec: ~10-14px at normal zoom, 16-22px close), so the fleet reads
@@ -375,25 +353,16 @@ export default function TrafficSimulation({
           ctx.stroke()
         }
 
-        // Vehicle markers — a small top-down car silhouette rotated to face
-        // the direction of travel (rather than a plain dot or triangle), so
-        // the map reads as actual moving traffic. Heading is derived from
-        // the straight-line direction of the current segment; for the
-        // short hops between adjacent cameras at city zoom levels, treating
-        // lat/lng deltas as locally linear on screen is accurate enough for
-        // a marker's rotation without the cost of re-projecting two more
-        // points per vehicle per frame. Size scales with the map's current
-        // zoom (computed once per frame, not per vehicle) so cars stay
-        // small at city-wide zoom and only grow once zoomed in close — and
-        // scales again per kind (normal < suspicious < blacklisted <
-        // selected), so the visual hierarchy holds at every zoom level.
+        // Vehicle markers — a plain dot, not a car silhouette. Size scales
+        // with the map's current zoom (computed once per frame, not per
+        // vehicle) so dots stay small at city-wide zoom and only grow once
+        // zoomed in close — and scales again per kind (normal < suspicious
+        // < blacklisted < selected), so the visual hierarchy holds at every
+        // zoom level.
         const zoom = map.getZoom()
         const normalLen = normalLengthForZoom(zoom)
 
         const drawVehicle = (v: SimVehicle, isSelected: boolean) => {
-          const from = v.route[v.segIndex]
-          const to = v.route[v.segIndex + 1] ?? from
-          const heading = Math.atan2(-(to.lat - from.lat), to.lng - from.lng)
           const detectFrac = Math.max(0, 1 - (now - v.lastDetectedAt) / DETECTION_HIGHLIGHT_MS)
           const colors = isSelected ? CAR_COLORS.selected : CAR_COLORS[v.kind]
           const sizeKey = isSelected ? 'selected' : v.kind
@@ -402,8 +371,7 @@ export default function TrafficSimulation({
           // type" — there's no such data to draw on) so the fleet doesn't
           // read as identical clones.
           const sizeVariant = 0.92 + (v.id % 5) * 0.04
-          const len = normalLen * KIND_SIZE_MULTIPLIER[sizeKey] * sizeVariant * (1 + detectFrac * 0.15)
-          const wid = len * 0.42
+          const radius = normalLen * 0.3 * KIND_SIZE_MULTIPLIER[sizeKey] * sizeVariant * (1 + detectFrac * 0.15)
 
           // Normal traffic is background information at all times (dimmer
           // still while something else is being tracked); suspicious sits
@@ -417,14 +385,6 @@ export default function TrafficSimulation({
 
           ctx.save()
           ctx.globalAlpha = opacity
-          ctx.translate(v.screenX, v.screenY)
-          ctx.rotate(heading)
-
-          // Soft shadow underneath, separating the car from the pale map.
-          ctx.beginPath()
-          ctx.ellipse(0, 0, len * 0.52, wid * 0.58, 0, 0, Math.PI * 2)
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.22)'
-          ctx.fill()
 
           if (isSelected) {
             // Expanding, fading ring — scale 1 -> 1.25, opacity 0.8 -> 0,
@@ -433,7 +393,7 @@ export default function TrafficSimulation({
             const cycleMs = 1200
             const t = (now % cycleMs) / cycleMs
             ctx.beginPath()
-            ctx.arc(0, 0, len * 0.62 * (1 + 0.25 * t), 0, Math.PI * 2)
+            ctx.arc(v.screenX, v.screenY, radius * 2 * (1 + 0.25 * t), 0, Math.PI * 2)
             ctx.strokeStyle = `rgba(255, 210, 31, ${0.8 * (1 - t)})`
             ctx.lineWidth = 1.6
             ctx.stroke()
@@ -442,51 +402,34 @@ export default function TrafficSimulation({
             // traffic" without the pulsing treatment reserved for the
             // vehicle actually being tracked.
             ctx.beginPath()
-            ctx.arc(0, 0, len * 0.58, 0, Math.PI * 2)
+            ctx.arc(v.screenX, v.screenY, radius * 1.9, 0, Math.PI * 2)
             ctx.strokeStyle = v.kind === 'blacklisted' ? 'rgba(230,57,70,0.55)' : 'rgba(255,176,32,0.5)'
             ctx.lineWidth = 1.1
             ctx.stroke()
           }
 
-          traceCarBody(ctx, len, wid)
+          ctx.beginPath()
+          ctx.arc(v.screenX, v.screenY, radius, 0, Math.PI * 2)
           ctx.fillStyle = colors.body
           if (isSelected || v.kind !== 'normal' || detectFrac > 0) {
             ctx.shadowColor = isSelected ? 'rgba(255,210,31,0.6)' : colors.body
-            ctx.shadowBlur = isSelected ? 6 : 3 + detectFrac * 6
+            ctx.shadowBlur = isSelected ? 8 : 4 + detectFrac * 6
           } else {
             ctx.shadowBlur = 0
           }
           ctx.fill()
           ctx.shadowBlur = 0
           ctx.strokeStyle = colors.highlight
-          ctx.lineWidth = isSelected ? 1.1 : 0.7
+          ctx.lineWidth = isSelected ? 1.4 : 0.9
           ctx.stroke()
-
-          // Windshield + headlights — skipped below a size floor where
-          // they'd just be sub-pixel noise.
-          if (len > 10) {
-            ctx.beginPath()
-            ctx.ellipse(len * 0.1, 0, len * 0.17, wid * 0.32, 0, 0, Math.PI * 2)
-            ctx.fillStyle = colors.glass
-            ctx.fill()
-          }
-          if (len > 13) {
-            ctx.fillStyle = colors.highlight
-            const lampR = Math.max(0.8, len * 0.045)
-            ctx.beginPath()
-            ctx.arc(len * 0.47, -wid * 0.22, lampR, 0, Math.PI * 2)
-            ctx.arc(len * 0.47, wid * 0.22, lampR, 0, Math.PI * 2)
-            ctx.fill()
-          }
 
           ctx.restore()
 
-          // Small "!" flag above blacklisted vehicles — drawn in screen
-          // space (not rotated with the car) so it always reads upright.
+          // Small "!" flag above blacklisted vehicles.
           if (v.kind === 'blacklisted' && !isSelected) {
             ctx.save()
             ctx.globalAlpha = opacity
-            ctx.translate(v.screenX, v.screenY - len * 0.85)
+            ctx.translate(v.screenX, v.screenY - radius * 2.4)
             ctx.beginPath()
             ctx.moveTo(-3.2, 4); ctx.lineTo(3.2, 4); ctx.lineTo(0, -5.5)
             ctx.closePath()

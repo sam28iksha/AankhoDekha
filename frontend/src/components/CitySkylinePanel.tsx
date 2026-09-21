@@ -7,10 +7,15 @@
 // without depicting any specific real structure. Wide and reasonably tall
 // (viewBox 700x480) with ~20 distinct foreground/midground structures so
 // the buildings themselves, not empty canvas, are what fills the panel.
+//
+// Bold variant: every stroke below is roughly 1.7-2x the original line-art
+// weight, and detail lines (floors, columns, arches) run at higher opacity
+// too, so the architecture reads as deliberate linework up close instead of
+// fading into faint outline texture the way the original thin strokes did.
 
 const ARCH_PRIMARY = '#2F6848'
 const ARCH_HIGHLIGHT = '#3F8559'
-const ARCH_DISTANT = 'rgba(47,104,72,0.35)'
+const ARCH_DISTANT = 'rgba(47,104,72,0.42)'
 const TECH_ACCENT = '#00B8D9'
 const GROUND_Y = 440
 
@@ -52,15 +57,15 @@ function windowGridTower(x: number, w: number, h: number, opts: { pulse?: 'a' | 
   const floors = [0.22, 0.42, 0.62, 0.82]
   return (
     <g key={`tower-${x}`} opacity={0.95}>
-      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.6" />
+      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.8" />
       {floors.map((f, i) => (
-        <line key={i} x1={x} y1={top + h * f} x2={x + w} y2={top + h * f} stroke={ARCH_PRIMARY} strokeWidth="0.7" opacity="0.5" />
+        <line key={i} x1={x} y1={top + h * f} x2={x + w} y2={top + h * f} stroke={ARCH_PRIMARY} strokeWidth="1.3" opacity="0.65" />
       ))}
-      <line x1={cx} y1={top} x2={cx} y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.4" />
-      <rect x={crownX} y={crownTop} width={crownW} height={crownH} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.5" />
-      <line x1={cx} y1={crownTop} x2={cx} y2={antennaTop} stroke={ARCH_HIGHLIGHT} strokeWidth="1.4" />
+      <line x1={cx} y1={top} x2={cx} y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.55" />
+      <rect x={crownX} y={crownTop} width={crownW} height={crownH} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2.6" />
+      <line x1={cx} y1={crownTop} x2={cx} y2={antennaTop} stroke={ARCH_HIGHLIGHT} strokeWidth="2.4" />
       {opts.pulse && (
-        <circle cx={cx} cy={antennaTop - 4} r="2.6" fill={TECH_ACCENT} className={`skyline-pulse${opts.pulse === 'b' ? ' skyline-pulse-delay' : ''}`} />
+        <circle cx={cx} cy={antennaTop - 4} r="3.2" fill={TECH_ACCENT} className={`skyline-pulse${opts.pulse === 'b' ? ' skyline-pulse-delay' : ''}`} />
       )}
     </g>
   )
@@ -72,10 +77,10 @@ function spireTower(x: number, w: number, h: number) {
   const spireTip = top - h * 0.22
   return (
     <g key={`spire-${x}`} opacity={0.9}>
-      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.4" />
-      <path d={`M ${x} ${top} L ${cx} ${spireTip} L ${x + w} ${top} Z`} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.4" />
-      <line x1={x} y1={top + h * 0.35} x2={x + w} y2={top + h * 0.35} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
-      <line x1={x} y1={top + h * 0.65} x2={x + w} y2={top + h * 0.65} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
+      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.4" />
+      <path d={`M ${x} ${top} L ${cx} ${spireTip} L ${x + w} ${top} Z`} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2.4" />
+      <line x1={x} y1={top + h * 0.35} x2={x + w} y2={top + h * 0.35} stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
+      <line x1={x} y1={top + h * 0.65} x2={x + w} y2={top + h * 0.65} stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
     </g>
   )
 }
@@ -88,15 +93,15 @@ function domedBuilding(x: number, w: number, h: number) {
   const colOffset = w * 0.14
   return (
     <g key={`dome-${x}`} opacity={0.95}>
-      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.5" />
-      <path d={`M ${x} ${top} A ${w / 2} ${domeRy} 0 0 1 ${x + w} ${top}`} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.6" />
-      <line x1={cx} y1={domeTop + 4} x2={cx} y2={domeTop - 14} stroke={ARCH_HIGHLIGHT} strokeWidth="1.2" />
-      <circle cx={cx} cy={domeTop - 17} r="1.6" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1" />
+      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.6" />
+      <path d={`M ${x} ${top} A ${w / 2} ${domeRy} 0 0 1 ${x + w} ${top}`} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2.8" />
+      <line x1={cx} y1={domeTop + 4} x2={cx} y2={domeTop - 14} stroke={ARCH_HIGHLIGHT} strokeWidth="2.1" />
+      <circle cx={cx} cy={domeTop - 17} r="1.9" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.8" />
       {/* columns flanking a small arch doorway */}
-      <line x1={x + colOffset} y1={top + h * 0.15} x2={x + colOffset} y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="0.8" opacity="0.6" />
-      <line x1={x + w - colOffset} y1={top + h * 0.15} x2={x + w - colOffset} y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="0.8" opacity="0.6" />
-      <path d={`M ${cx - w * 0.16} ${GROUND_Y} A ${w * 0.16} ${h * 0.14} 0 0 1 ${cx + w * 0.16} ${GROUND_Y}`} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1" opacity="0.75" />
-      <line x1={x} y1={top + h * 0.5} x2={x + w} y2={top + h * 0.5} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.4" />
+      <line x1={x + colOffset} y1={top + h * 0.15} x2={x + colOffset} y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="1.4" opacity="0.75" />
+      <line x1={x + w - colOffset} y1={top + h * 0.15} x2={x + w - colOffset} y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="1.4" opacity="0.75" />
+      <path d={`M ${cx - w * 0.16} ${GROUND_Y} A ${w * 0.16} ${h * 0.14} 0 0 1 ${cx + w * 0.16} ${GROUND_Y}`} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.8" opacity="0.9" />
+      <line x1={x} y1={top + h * 0.5} x2={x + w} y2={top + h * 0.5} stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.55" />
     </g>
   )
 }
@@ -107,12 +112,12 @@ function archedMidrise(x: number, w: number, h: number) {
   const archY = top + h * 0.32
   return (
     <g key={`arched-${x}`} opacity={0.9}>
-      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.4" />
+      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.4" />
       {[0.18, 0.5, 0.82].map((f, i) => {
         const ax = x + w * f - archW / 2
-        return <path key={i} d={`M ${ax} ${archY} A ${archW / 2} ${archW * 0.9} 0 0 1 ${ax + archW} ${archY}`} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1" opacity="0.75" />
+        return <path key={i} d={`M ${ax} ${archY} A ${archW / 2} ${archW * 0.9} 0 0 1 ${ax + archW} ${archY}`} fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.8" opacity="0.9" />
       })}
-      <line x1={x} y1={top} x2={x + w} y2={top} stroke={ARCH_PRIMARY} strokeWidth="0.7" opacity="0.6" />
+      <line x1={x} y1={top} x2={x + w} y2={top} stroke={ARCH_PRIMARY} strokeWidth="1.3" opacity="0.75" />
     </g>
   )
 }
@@ -121,65 +126,66 @@ function smallBlock(x: number, w: number, h: number) {
   const top = GROUND_Y - h
   return (
     <g key={`block-${x}`} opacity={0.85}>
-      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.3" />
-      <line x1={x} y1={top + h * 0.5} x2={x + w} y2={top + h * 0.5} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
+      <rect x={x} y={top} width={w} height={h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.2" />
+      <line x1={x} y1={top + h * 0.5} x2={x + w} y2={top + h * 0.5} stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
     </g>
   )
 }
 
 // ── The central landmark — tall central structure, large dome, large
 // central arch, flanking columns, a stepped/layered roofline, twin smaller
-// side towers, and a decorative parapet. The clear focal point: taller and
-// more detailed than everything around it.
+// side towers, and a decorative parapet. The clear focal point: taller,
+// more detailed, and now noticeably more luminous than everything around
+// it, via a stronger two-layer glow (green core + faint teal bloom).
 function centralLandmark() {
   return (
-    <g style={{ filter: 'drop-shadow(0 0 5px rgba(63,133,89,0.25))' }}>
+    <g style={{ filter: 'drop-shadow(0 0 8px rgba(63,133,89,0.5)) drop-shadow(0 0 18px rgba(0,184,217,0.22))' }}>
       {/* twin side towers */}
-      <rect x="286" y="220" width="18" height="220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.5" opacity="0.9" />
-      <path d="M 286 220 A 9 22 0 0 1 304 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.4" opacity="0.9" />
-      <line x1="295" y1="198" x2="295" y2="180" stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.85" />
-      <line x1="286" y1="300" x2="304" y2="300" stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
-      <line x1="286" y1="370" x2="304" y2="370" stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
+      <rect x="286" y="220" width="18" height="220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.6" opacity="0.95" />
+      <path d="M 286 220 A 9 22 0 0 1 304 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.4" opacity="0.95" />
+      <line x1="295" y1="198" x2="295" y2="180" stroke={ARCH_PRIMARY} strokeWidth="1.9" opacity="0.9" />
+      <line x1="286" y1="300" x2="304" y2="300" stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
+      <line x1="286" y1="370" x2="304" y2="370" stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
 
-      <rect x="396" y="220" width="18" height="220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.5" opacity="0.9" />
-      <path d="M 396 220 A 9 22 0 0 1 414 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.4" opacity="0.9" />
-      <line x1="405" y1="198" x2="405" y2="180" stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.85" />
-      <line x1="396" y1="300" x2="414" y2="300" stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
-      <line x1="396" y1="370" x2="414" y2="370" stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.5" />
+      <rect x="396" y="220" width="18" height="220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.6" opacity="0.95" />
+      <path d="M 396 220 A 9 22 0 0 1 414 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="2.4" opacity="0.95" />
+      <line x1="405" y1="198" x2="405" y2="180" stroke={ARCH_PRIMARY} strokeWidth="1.9" opacity="0.9" />
+      <line x1="396" y1="300" x2="414" y2="300" stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
+      <line x1="396" y1="370" x2="414" y2="370" stroke={ARCH_PRIMARY} strokeWidth="1.1" opacity="0.65" />
 
       {/* main gateway block */}
-      <rect x="310" y="150" width="80" height="290" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2" />
+      <rect x="310" y="150" width="80" height="290" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="3.4" />
 
       {/* decorative parapet along the top edge */}
       {[316, 328, 340, 352, 364, 376, 384].map((x, i) => (
-        <line key={i} x1={x} y1="150" x2={x} y2="141" stroke={ARCH_HIGHLIGHT} strokeWidth="1" opacity="0.75" />
+        <line key={i} x1={x} y1="150" x2={x} y2="141" stroke={ARCH_HIGHLIGHT} strokeWidth="1.8" opacity="0.9" />
       ))}
       {/* cornice lines */}
-      <line x1="312" y1="163" x2="388" y2="163" stroke={ARCH_HIGHLIGHT} strokeWidth="0.8" opacity="0.7" />
-      <line x1="312" y1="171" x2="388" y2="171" stroke={ARCH_HIGHLIGHT} strokeWidth="0.8" opacity="0.6" />
+      <line x1="312" y1="163" x2="388" y2="163" stroke={ARCH_HIGHLIGHT} strokeWidth="1.4" opacity="0.85" />
+      <line x1="312" y1="171" x2="388" y2="171" stroke={ARCH_HIGHLIGHT} strokeWidth="1.4" opacity="0.75" />
 
       {/* flanking columns either side of the great arch */}
-      <line x1="317" y1="185" x2="317" y2="440" stroke={ARCH_PRIMARY} strokeWidth="0.9" opacity="0.6" />
-      <line x1="325" y1="185" x2="325" y2="440" stroke={ARCH_PRIMARY} strokeWidth="0.9" opacity="0.6" />
-      <line x1="375" y1="185" x2="375" y2="440" stroke={ARCH_PRIMARY} strokeWidth="0.9" opacity="0.6" />
-      <line x1="383" y1="185" x2="383" y2="440" stroke={ARCH_PRIMARY} strokeWidth="0.9" opacity="0.6" />
+      <line x1="317" y1="185" x2="317" y2="440" stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.75" />
+      <line x1="325" y1="185" x2="325" y2="440" stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.75" />
+      <line x1="375" y1="185" x2="375" y2="440" stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.75" />
+      <line x1="383" y1="185" x2="383" y2="440" stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.75" />
 
       {/* the great central arch opening */}
-      <path d="M 332 440 L 332 262 A 18 38 0 0 1 368 262 L 368 440" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.9" />
+      <path d="M 332 440 L 332 262 A 18 38 0 0 1 368 262 L 368 440" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="3.2" />
       {/* small decorative arch windows either side of the opening */}
-      <path d="M 316 400 A 6 15 0 0 1 328 400" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1" opacity="0.7" />
-      <path d="M 372 400 A 6 15 0 0 1 384 400" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1" opacity="0.7" />
-      <path d="M 316 220 A 6 26 0 0 1 328 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="0.9" opacity="0.55" />
-      <path d="M 372 220 A 6 26 0 0 1 384 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="0.9" opacity="0.55" />
+      <path d="M 316 400 A 6 15 0 0 1 328 400" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.8" opacity="0.85" />
+      <path d="M 372 400 A 6 15 0 0 1 384 400" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.8" opacity="0.85" />
+      <path d="M 316 220 A 6 26 0 0 1 328 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.7" />
+      <path d="M 372 220 A 6 26 0 0 1 384 220" fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.7" />
 
       {/* stepped upper tier — a second, layered architectural section */}
-      <rect x="330" y="120" width="40" height="30" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.6" />
-      <line x1="333" y1="128" x2="367" y2="128" stroke={ARCH_HIGHLIGHT} strokeWidth="0.7" opacity="0.7" />
+      <rect x="330" y="120" width="40" height="30" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2.8" />
+      <line x1="333" y1="128" x2="367" y2="128" stroke={ARCH_HIGHLIGHT} strokeWidth="1.3" opacity="0.85" />
 
       {/* crowning dome */}
-      <path d="M 326 120 A 24 58 0 0 1 374 120" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2.1" />
-      <line x1="350" y1="62" x2="350" y2="36" stroke={ARCH_HIGHLIGHT} strokeWidth="1.6" />
-      <circle cx="350" cy="30" r="2.8" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.4" />
+      <path d="M 326 120 A 24 58 0 0 1 374 120" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="3.6" />
+      <line x1="350" y1="62" x2="350" y2="36" stroke={ARCH_HIGHLIGHT} strokeWidth="2.8" />
+      <circle cx="350" cy="30" r="3.2" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="2.4" />
     </g>
   )
 }
@@ -190,21 +196,21 @@ function CitySkylineIllustration() {
       {/* ── Background: distant, faint skyline strip ───────────────────── */}
       <g opacity="0.35">
         {BG_BUILDINGS.map((b, i) => (
-          <rect key={i} x={b.x} y={GROUND_Y - b.h} width={b.w} height={b.h} fill="none" stroke={ARCH_DISTANT} strokeWidth="0.9" />
+          <rect key={i} x={b.x} y={GROUND_Y - b.h} width={b.w} height={b.h} fill="none" stroke={ARCH_DISTANT} strokeWidth="1.4" />
         ))}
       </g>
 
       {/* ── Midground: ordinary buildings, a couple with a simple dome ──── */}
-      <g opacity="0.6">
+      <g opacity="0.65">
         {MIDGROUND.map((b, i) => (
           <g key={i}>
-            <rect x={b.x} y={GROUND_Y - b.h} width={b.w} height={b.h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.2" />
-            <line x1={b.x} y1={GROUND_Y - b.h * 0.6} x2={b.x + b.w} y2={GROUND_Y - b.h * 0.6} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.6" />
-            <line x1={b.x} y1={GROUND_Y - b.h * 0.3} x2={b.x + b.w} y2={GROUND_Y - b.h * 0.3} stroke={ARCH_PRIMARY} strokeWidth="0.6" opacity="0.6" />
+            <rect x={b.x} y={GROUND_Y - b.h} width={b.w} height={b.h} fill="none" stroke={ARCH_PRIMARY} strokeWidth="2" />
+            <line x1={b.x} y1={GROUND_Y - b.h * 0.6} x2={b.x + b.w} y2={GROUND_Y - b.h * 0.6} stroke={ARCH_PRIMARY} strokeWidth="1" opacity="0.7" />
+            <line x1={b.x} y1={GROUND_Y - b.h * 0.3} x2={b.x + b.w} y2={GROUND_Y - b.h * 0.3} stroke={ARCH_PRIMARY} strokeWidth="1" opacity="0.7" />
             {b.dome && (
               <path
                 d={`M ${b.x} ${GROUND_Y - b.h} A ${b.w / 2} ${b.w / 2} 0 0 1 ${b.x + b.w} ${GROUND_Y - b.h}`}
-                fill="none" stroke={ARCH_PRIMARY} strokeWidth="1.2"
+                fill="none" stroke={ARCH_PRIMARY} strokeWidth="2"
               />
             )}
           </g>
@@ -212,10 +218,10 @@ function CitySkylineIllustration() {
       </g>
 
       {/* ── Ground line + subtle data-grid ticks ────────────────────────── */}
-      <line x1="6" y1={GROUND_Y} x2="694" y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="1" opacity="0.5" />
-      <g opacity="0.2">
+      <line x1="6" y1={GROUND_Y} x2="694" y2={GROUND_Y} stroke={ARCH_PRIMARY} strokeWidth="1.6" opacity="0.55" />
+      <g opacity="0.25">
         {GRID_TICKS.map((x, i) => (
-          <line key={i} x1={x} y1={GROUND_Y} x2={x} y2={GROUND_Y + 6} stroke={ARCH_HIGHLIGHT} strokeWidth="1" />
+          <line key={i} x1={x} y1={GROUND_Y} x2={x} y2={GROUND_Y + 6} stroke={ARCH_HIGHLIGHT} strokeWidth="1.4" />
         ))}
       </g>
 
@@ -240,9 +246,9 @@ function CitySkylineIllustration() {
           two tower antennae, arcing over the landmark, plus a scatter of
           tiny "sensor node" dots — subtle enough to read as connectivity,
           not a circuit-board pattern. ─────────────────────────────────── */}
-      <path d="M 51 124 Q 350 26 649 124" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="0.8" strokeDasharray="2 5" opacity="0.3" />
+      <path d="M 51 124 Q 350 26 649 124" fill="none" stroke={ARCH_HIGHLIGHT} strokeWidth="1.3" strokeDasharray="2 5" opacity="0.4" />
       {NODE_DOTS.map(([cx, cy], i) => (
-        <circle key={i} cx={cx} cy={cy} r="1.6" fill="rgba(63,133,89,0.5)" />
+        <circle key={i} cx={cx} cy={cy} r="2" fill="rgba(63,133,89,0.6)" />
       ))}
     </svg>
   )
@@ -263,7 +269,8 @@ export default function CitySkylinePanel({ compact = false }: { compact?: boolea
       <div className="city-skyline-glow" />
       <CitySkylineIllustration />
       <div className="city-skyline-tagline">
-        Smart Cities.<br />Safer Tomorrow.
+        <span className="city-skyline-tagline-primary">Smart Cities.</span>
+        <span className="city-skyline-tagline-secondary">Safer Tomorrow.</span>
       </div>
     </div>
   )

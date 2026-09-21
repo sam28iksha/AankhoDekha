@@ -26,19 +26,42 @@
   --brand-light: #6FA77F;
   --brand-soft: #DCE9DF;
 
-  /* Application surfaces — light, institutional */
-  --bg-primary: #F3F4F0;
-  --bg-secondary: #E9ECE7;
-  --bg-card: #FFFFFF;
-  --bg-card-hover: #F7F8F5;
-  --bg-input: #F8F9F6;
-  --border: #D5DDD7;
-  --border-strong: #C4CEC6;
+  /* Application surfaces — warm ivory/beige page canvas, cards a step
+     lighter so they visibly separate from the page behind them. Every
+     existing bg/border/text call site across the app reads these same
+     tokens, so this repaints the whole application's background system in
+     one place rather than page-by-page. */
+  --bg-primary: #DDE6D5;
+  --bg-secondary: #EEF1EA;
+  --bg-card: #F8FAF4;
+  --bg-card-hover: #F7F7F2;
+  --bg-input: #FFFFFF;
+  /* Previous border tokens (#D8DDD5/#C9D8D0) sat too close in lightness to
+     the beige page background, which was the actual root cause of cards,
+     inputs and dividers reading as "invisible" — these are deliberately
+     more saturated/darker so every bordered surface separates clearly from
+     --bg-primary at a glance, without needing per-component fixes. */
+  --border: #B8C9C0;
+  --border-strong: #9DB3A6;
+  --shadow-card: 0 3px 12px rgba(20, 60, 45, 0.10);
 
-  --text-primary: #18221D;
-  --text-secondary: #536158;
-  --text-muted: #7A867E;
+  --text-primary: #12382D;
+  --text-secondary: #5F716A;
+  --text-muted: #65766E;
   --text-on-brand: #EAF2EC;
+
+  /* Centralized aliases named exactly as the design spec calls them, for
+     any new/rewritten CSS going forward. */
+  --page-bg: var(--bg-primary);
+  --surface: var(--bg-card);
+  --surface-soft: var(--bg-card-hover);
+  --surface-elevated: #FFFFFF;
+  --primary: var(--brand);
+  --primary-dark: var(--brand-dark);
+  --success: var(--accent-green);
+  --warning: var(--accent-suspicious);
+  --danger: var(--accent-red);
+  --info: var(--accent-blue);
 
   /* Intelligence colors — do not reassign meaning between these */
   --accent-blue: #00B8D9;         /* camera / AI / live intelligence */
@@ -97,8 +120,43 @@ body {
   background-color: var(--bg-primary);
   color: var(--text-primary);
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  /* Baseline weight for the whole app — inherited by every element that
+     doesn't set its own (the vast majority of table cells, list rows and
+     plain text across every page), so the "thin/washed out" default text
+     becomes a readable medium weight everywhere at once instead of
+     hand-editing each page. Anything with its own Tailwind font-weight
+     class (font-semibold, font-bold, etc.) is unaffected — those are more
+     specific and still win. */
+  font-weight: 500;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Semantic elements used raw (without a per-page weight class) across the
+   data tables and forms on every page — bumped once here so headers and
+   labels read as headers/labels everywhere, consistent with the 500
+   baseline above. */
+th {
+  font-weight: 700;
+  background: var(--bg-secondary);
+}
+
+label {
+  font-weight: 600;
+}
+
+/* Table structure fallback — every page's tables render plain <table>
+   markup with their own per-column classes, but none define row borders
+   or a hover state of their own, so these element-level rules (lowest
+   specificity; any page's own classes still win) give every table on the
+   site the same visible structure instead of leaving rows to blend
+   together. */
+tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+tbody tr:hover {
+  background: var(--brand-soft);
 }
 
 /* ── Scrollbar ────────────────────────────────────────────── */
@@ -130,10 +188,16 @@ body {
    Analytics, Alerts, Blacklist, OCR, Audit Log, User Management) ──────── */
 .glass-card {
   position: relative;
-  background: var(--bg-card);
+  /* Sage-tinted, not the near-white --bg-card — .glass-card is the large
+     section-panel wrapper used on every page (map/chart containers, table
+     panels, the login form), distinct from the small --stat-card/telemetry
+     tiles that stay brighter white so their numbers still pop. This gives
+     three visible depth steps: page (--bg-primary, deepest sage) -> panel
+     (here) -> small card (--bg-card, brightest) nested inside it. */
+  background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(7, 19, 15, 0.06);
+  box-shadow: var(--shadow-card);
   transition: box-shadow 200ms ease, border-color 200ms ease;
 }
 
@@ -179,7 +243,7 @@ body {
   padding: 4px 12px;
   letter-spacing: 0.12em;
   font-weight: 700;
-  font-size: 0.9rem;
+  font-size: 1rem;
   color: var(--text-primary);
   text-transform: uppercase;
   box-shadow: 0 1px 2px rgba(7, 19, 15, 0.15);
@@ -541,6 +605,35 @@ body {
   width: 14px !important;
   height: 3px !important;
   background: repeating-linear-gradient(90deg, currentColor 0 5px, transparent 5px 8px) !important;
+}
+
+/* ── Live-simulation legend (Dashboard map, shown while the traffic
+   simulation is running) ── reuses .map-trajectory-legend-box's dark-HUD
+   card, just anchored bottom-right instead of top-right so it never
+   collides with the top stat-card overlay or the bottom-left sim toggle. */
+.map-sim-legend-box {
+  top: auto;
+  bottom: 14px;
+}
+
+.map-sim-legend-dot {
+  width: 10px !important;
+  height: 10px !important;
+  border-radius: 50% !important;
+  border: 1.5px solid #FFFFFF;
+}
+
+.map-sim-legend-density-label {
+  font-size: 10px;
+  color: #B8C9BE;
+  margin-top: 6px;
+}
+
+.map-sim-legend-density-bar {
+  height: 5px;
+  border-radius: 3px;
+  margin-top: 3px;
+  background: linear-gradient(90deg, #7FBF8F, #FFD166, #FF9F1C, #E63946);
 }
 
 /* ── Playback Simulation bar (bottom of Vehicle Search trajectory map) ──────── */
@@ -1003,7 +1096,7 @@ body {
 .city-skyline-glow {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle at 50% 40%, rgba(63, 133, 89, 0.20), transparent 65%);
+  background: radial-gradient(circle at 50% 40%, rgba(63, 133, 89, 0.55), transparent 75%);
   pointer-events: none;
 }
 
@@ -1013,16 +1106,53 @@ body {
   width: 80%;
   margin: 0 auto;
   height: auto;
+  /* Luminous glow around the whole illustration — applies in both the
+     full panel and the compact sidebar variant, since it lives on the
+     SVG itself rather than the (sidebar-hidden) ambient wash behind it.
+     Three stacked layers (tight bright core, mid green bloom, wide faint
+     teal halo) read as noticeably more luminous than a single soft shadow. */
+  filter:
+    drop-shadow(0 0 8px rgba(63, 133, 89, 0.6))
+    drop-shadow(0 0 20px rgba(63, 133, 89, 0.45))
+    drop-shadow(0 0 42px rgba(0, 184, 217, 0.3));
 }
 
 .city-skyline-tagline {
   position: relative;
   margin-top: 18px;
-  font-size: 21px;
-  font-weight: 600;
-  line-height: 1.25;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   color: #E8F0EB;
   text-align: center;
+}
+
+/* Sleek, geometric smart-city typeface — distinct from the app's Inter/
+   JetBrains Mono elsewhere, reserved for this one piece of "brand voice"
+   text so it reads as premium signage, not another UI label. A refined
+   two-tier hierarchy (larger/semi-bold lede, smaller/medium follow-on)
+   plus a soft glow in the same green as the skyline glow, so the type
+   feels like it belongs to the illustration above it. */
+.city-skyline-tagline-primary,
+.city-skyline-tagline-secondary {
+  font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+  text-shadow: 0 0 14px rgba(63, 133, 89, 0.4);
+}
+
+.city-skyline-tagline-primary {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.city-skyline-tagline-secondary {
+  font-size: 18px;
+  font-weight: 500;
+  letter-spacing: 0.35px;
+  line-height: 1.2;
+  color: rgba(232, 240, 235, 0.92);
 }
 
 .skyline-pulse {
@@ -1049,18 +1179,22 @@ body {
     max-width: 560px;
     padding: 22px 24px;
   }
-  .city-skyline-svg {
-    width: 84%;
-  }
   .city-skyline-tagline {
     margin-top: 14px;
-    font-size: 19px;
+  }
+  .city-skyline-tagline-primary {
+    font-size: 20px;
+  }
+  .city-skyline-tagline-secondary {
+    font-size: 16px;
   }
 }
 
-/* Sidebar placement (Dashboard only) — no card chrome of its own, since the
+/* Sidebar placement (every page) — no card chrome of its own, since the
    dark-green sidebar already is the background; just the illustration and
-   tagline, scaled down to fit a ~230px rail. */
+   tagline, scaled down to fit a ~230px rail. The big ambient radial wash
+   stays off here (ambient-glow div below); the SVG's own drop-shadow
+   filter above supplies the luminous look at this size instead. */
 .city-skyline-panel-compact {
   max-width: none;
   width: 100%;
@@ -1076,14 +1210,19 @@ body {
   display: none;
 }
 
-.city-skyline-panel-compact .city-skyline-svg {
-  width: 100%;
-}
-
 .city-skyline-panel-compact .city-skyline-tagline {
   margin-top: 10px;
-  font-size: 13px;
-  font-weight: 600;
+  gap: 1px;
+}
+
+.city-skyline-panel-compact .city-skyline-tagline-primary {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.city-skyline-panel-compact .city-skyline-tagline-secondary {
+  font-size: 14px;
+  font-weight: 700;
 }
 
 /* ── Page titles — signature "command center" heading pattern ─────────
@@ -1092,7 +1231,7 @@ body {
    plain <h1>. Reads as one deliberate system, not a generic dashboard. */
 .page-kicker {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   color: var(--brand);
@@ -1102,7 +1241,7 @@ body {
 .page-title {
   position: relative;
   padding-left: 14px;
-  font-size: 1.375rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: 0.01em;
@@ -1123,7 +1262,7 @@ body {
 .page-title-sm {
   position: relative;
   padding-left: 11px;
-  font-size: 0.95rem;
+  font-size: 1.0625rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1185,6 +1324,68 @@ body {
   50% { box-shadow: 0 0 16px rgba(79, 138, 98, 0.55); }
 }
 
+/* ── Brand logo image + wordmark (AankhoDekha mark, used in the sidebar
+   header and on the Login card) ──────────────────────────────────────── */
+.brand-logo-img {
+  height: 32px;
+  width: auto;
+  flex-shrink: 0;
+}
+
+.brand-logo-img--lg {
+  height: 56px;
+  width: auto;
+}
+
+/* Samarkan is self-hosted (not a Google Font) -- drop the .woff2 file at
+   frontend/public/fonts/SamarkanNormal.woff2 and Vite serves it verbatim
+   at this same absolute path. */
+@font-face {
+  font-family: 'Samarkan';
+  src: url('/fonts/SamarkanNormal.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+.brand-wordmark {
+  font-family: 'Samarkan', cursive;
+  font-weight: normal;
+  font-size: 1.05rem;
+  letter-spacing: 0.02em;
+  line-height: 1.15;
+  color: #0F3822;
+  filter:
+    drop-shadow(0 0 0.05em rgba(244, 241, 234, 1))
+    drop-shadow(0 0 0.1em rgba(244, 241, 234, 1))
+    drop-shadow(0 0 0.22em rgba(244, 241, 234, 0.85))
+    drop-shadow(0 0.03em 0.08em rgba(0, 0, 0, 0.4));
+}
+
+/* Samarkan has no real capitals (A/a and D/d are identical glyphs in the
+   font file), so the leading "A"/"D" borrow Oswald Light instead. The
+   ::before draws a thin synthetic bar behind just those two letters, at
+   the height Samarkan's own connecting line runs through the rest of the
+   word, so the swap reads as one continuous wordmark. */
+.brand-wordmark-cap {
+  font-family: 'Oswald', system-ui, sans-serif;
+  font-weight: 300;
+  font-size: 0.85em;
+  display: inline-block;
+  position: relative;
+  top: 0.02em;
+}
+.brand-wordmark-cap::before {
+  content: '';
+  position: absolute;
+  left: -0.06em;
+  right: -0.06em;
+  top: 0.32em;
+  height: max(1px, 0.05em);
+  background: #0F3822;
+  z-index: -1;
+}
+
 .command-wordmark {
   font-weight: 800;
   font-size: 0.9rem;
@@ -1214,7 +1415,7 @@ body {
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.6875rem;
+  font-size: 0.8125rem;
   font-weight: 700;
   letter-spacing: 0.06em;
 }
@@ -1241,14 +1442,42 @@ body {
   flex-direction: column;
 }
 
+/* Branding block — logo stacked above the wordmark, both centered, its own
+   dedicated block at the top of the sidebar rather than a cramped
+   logo+text row. Height is auto (content + padding), not fixed, so it
+   never clips at any viewport size. */
 .command-sidebar-logo {
-  height: 60px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   gap: 10px;
-  padding: 0 18px;
+  padding: 20px 14px 28px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   flex-shrink: 0;
+}
+
+.command-sidebar-logo .brand-logo-img {
+  height: 50px;
+  width: auto;
+}
+
+.command-sidebar-brandtext {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.command-sidebar-logo .brand-wordmark {
+  font-size: 1.7rem;
+  line-height: 1.1;
+}
+
+.command-sidebar-tagline {
+  font-size: 12px;
+  font-weight: 500;
+  color: rgba(234, 242, 236, 0.65);
+  text-align: center;
 }
 
 .command-sidebar-nav {
@@ -1262,9 +1491,9 @@ body {
 
 .command-sidebar-section {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.625rem;
+  font-size: 0.75rem;
   font-weight: 700;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.13em;
   color: rgba(234, 242, 236, 0.4);
   padding: 14px 17px 6px;
 }
@@ -1294,8 +1523,8 @@ body {
   border-radius: 8px;
   color: var(--text-on-brand);
   opacity: 0.72;
-  font-size: 0.8125rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.16s ease;
   text-decoration: none;
@@ -1316,6 +1545,7 @@ body {
   border-left-color: var(--brand-light);
   color: #FFFFFF;
   opacity: 1;
+  font-weight: 700;
 }
 
 .nav-item.active::after {
@@ -1345,12 +1575,12 @@ body {
   border-radius: 12px;
   padding: 16px 20px;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(7, 19, 15, 0.05);
+  box-shadow: var(--shadow-card);
 }
 
 .stat-card:hover {
   border-color: var(--border-strong);
-  box-shadow: 0 6px 18px rgba(7, 19, 15, 0.1);
+  box-shadow: 0 6px 18px rgba(20, 60, 45, 0.16);
   transform: translateY(-1px);
 }
 
@@ -1374,16 +1604,17 @@ body {
   padding: 10px 16px;
   color: var(--text-primary);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.9rem;
+  font-size: 1rem;
+  font-weight: 500;
   width: 100%;
   outline: none;
   transition: all 0.2s ease;
 }
 
 .search-input:focus {
-  border-color: var(--accent-info);
+  border-color: var(--brand);
   background: var(--bg-card);
-  box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.14);
+  box-shadow: 0 0 0 3px rgba(79, 138, 98, 0.18);
 }
 
 .search-input::placeholder {
@@ -1507,20 +1738,20 @@ body {
 
 /* ── Button ─────────────────────────────────────────────────── */
 .btn-primary {
-  background: var(--brand);
+  background: var(--brand-dark);
   color: #FFFFFF;
   border: none;
   border-radius: 8px;
   padding: 10px 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.9375rem;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(79, 138, 98, 0.28);
 }
 
 .btn-primary:hover {
-  background: var(--brand-hover);
+  background: var(--brand);
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(79, 138, 98, 0.36);
 }
@@ -1530,13 +1761,13 @@ body {
 }
 
 .btn-secondary {
-  background: var(--bg-card-hover);
-  color: var(--text-secondary);
-  border: 1px solid var(--border);
+  background: var(--brand-soft);
+  color: var(--text-primary);
+  border: 1px solid var(--brand);
   border-radius: 8px;
   padding: 10px 20px;
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.9375rem;
+  font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1544,7 +1775,7 @@ body {
 .btn-secondary:hover {
   background: var(--bg-secondary);
   color: var(--text-primary);
-  border-color: var(--border-strong);
+  border-color: var(--brand-hover);
 }
 
 /* ── Alert row ──────────────────────────────────────────────── */
@@ -1638,8 +1869,8 @@ body {
   gap: 4px;
   padding: 2px 8px;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.8125rem;
+  font-weight: 600;
 }
 
 .tag-blue { background: rgba(0, 184, 217, 0.12); color: #0089A3; border: 1px solid rgba(0, 184, 217, 0.32); }

@@ -860,6 +860,18 @@ export default function MapView({
         <span className="map-route-legend-note">Camera sightings are confirmed; the road path between them is inferred.</span>
       </div>
     )}
+    {simulationActive && (
+      <div className="map-trajectory-legend-box map-sim-legend-box">
+        <div className="map-trajectory-legend-title">Legend</div>
+        <div className="map-trajectory-legend-row"><i className="map-trajectory-legend-camera" /> Camera Location</div>
+        <div className="map-trajectory-legend-row"><i className="map-sim-legend-dot" style={{ background: '#0B5D3B' }} /> Normal Vehicle</div>
+        <div className="map-trajectory-legend-row"><i className="map-sim-legend-dot" style={{ background: '#FFB020' }} /> Suspicious Vehicle</div>
+        <div className="map-trajectory-legend-row"><i className="map-sim-legend-dot" style={{ background: '#E63946' }} /> Blacklisted Vehicle</div>
+        <div className="map-trajectory-legend-row"><i className="map-trajectory-legend-current" /> Selected Vehicle</div>
+        <div className="map-sim-legend-density-label">Traffic Density</div>
+        <div className="map-sim-legend-density-bar" />
+      </div>
+    )}
     </div>
   )
 }
