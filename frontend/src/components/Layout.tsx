@@ -1,4 +1,4 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, Link } from 'react-router-dom'
 import { useState, useCallback, useEffect } from 'react'
 import {
   Map, Search, BarChart3, Bell, Eye, Ban, ScanLine,
@@ -47,8 +47,15 @@ export default function Layout() {
         className="flex items-center gap-4 px-4 flex-shrink-0"
         style={{ background: 'var(--bg-secondary)', height: '56px' }}
       >
-        {/* Logo */}
-        <div className="flex items-center gap-2.5 flex-shrink-0">
+        {/* Logo — links back to the public landing page. Passes
+            skipAutoEnter so Landing's scroll-past-hero listener doesn't
+            immediately bounce a signed-in visitor straight back here. */}
+        <Link
+          to="/home"
+          state={{ skipAutoEnter: true }}
+          className="flex items-center gap-2.5 flex-shrink-0"
+          title="Back to landing page"
+        >
           <div
             className="w-8 h-8 rounded-lg flex items-center justify-center"
             style={{ background: 'linear-gradient(135deg, #023047 0%, #00b4d8 55%, #ffaa4c 100%)', boxShadow: '0 0 14px rgba(0,180,216,0.45)' }}
@@ -61,7 +68,7 @@ export default function Layout() {
             </div>
             <div className="text-[10px]" style={{ color: 'var(--text-muted)' }}>The Eye of the City</div>
           </div>
-        </div>
+        </Link>
 
         <div style={{ width: 1, height: 28, background: 'var(--border)' }} />
 

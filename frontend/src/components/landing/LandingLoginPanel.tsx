@@ -59,8 +59,13 @@ export default function LandingLoginPanel() {
     setSubmitting(true)
     setError(null)
     try {
+      // Deliberately no navigate() here — a successful login just flips
+      // `user` truthy, and this component re-renders into the "signed in"
+      // branch below (explicit "Go to Dashboard" button), same as a
+      // returning already-logged-in visitor. Staying on Landing after
+      // login is the point: the dashboard is a deliberate next step
+      // (this button, or scroll/swipe past the hero), not an automatic one.
       await login(username.trim(), password)
-      navigate('/dashboard')
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'Login failed.')
     } finally {
