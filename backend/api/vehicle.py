@@ -61,6 +61,8 @@ async def get_vehicle_history(
         target=normalized,
     )
 
+    await db.commit()
+
     # Deterministic chronological ordering.
     #
     # timestamp is the primary ordering key.
@@ -253,6 +255,8 @@ async def get_vehicle_entity_history(
         target=normalized_id,
     )
 
+    await db.commit()
+
     vehicle = await db.get(Vehicle, normalized_id)
     if not vehicle:
         raise HTTPException(status_code=404, detail=f"Vehicle entity '{normalized_id}' not found")
@@ -272,18 +276,16 @@ async def get_vehicle_entity_history(
 
     if not rows:
         return {
-            "plate_number": normalized,
-        "vehicle_ids": [],
+        "vehicle_id": vehicle.id,
+        "plates_observed": [],
         "total_sightings": 0,
-        "blacklisted": bl is not None,
-        "blacklist_info": blacklist_info,
-        "first_seen": None,
-        "last_seen": None,
+        "first_seen": vehicle.first_seen.isoformat() if vehicle.first_seen else None,
+        "last_seen": vehicle.last_seen.isoformat() if vehicle.last_seen else None,
         "cameras_visited": [],
         "sightings": [],
         "trajectory": [],
         "legs": [],
-        }
+    }
 
     sightings: list[dict] = []
     trajectory: list[list[float]] = []
@@ -374,6 +376,7 @@ async def search_plates(
         "vehicle_search_fuzzy",
         target=normalized,
     )
+    await db.commit()
 
     result = await db.execute(
         select(

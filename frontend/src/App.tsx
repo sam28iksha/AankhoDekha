@@ -11,7 +11,7 @@ import AuditLog from './pages/AuditLog'
 import UserManagement from './pages/UserManagement'
 import { AuthProvider, useAuth, hasRole } from './lib/auth'
 import { AlertWebSocketProvider } from './lib/ws'
-
+import NotFound from './pages/NotFound'
 // Only mounted once the user is authenticated — this is deliberate, not
 // just a route guard: AlertWebSocketProvider reads the token at connect()
 // time, so nesting it here means a fresh login always gets a fresh socket
@@ -67,7 +67,7 @@ function AppRoutes() {
           element={hasRole(user, 'admin') ? <UserManagement /> : <Navigate to="/dashboard" replace />}
         />
       </Route>
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   )
 }
