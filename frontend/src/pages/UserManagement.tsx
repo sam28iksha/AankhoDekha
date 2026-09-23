@@ -66,19 +66,19 @@ export default function UserManagement() {
             <UserCog size={18} style={{ color: 'var(--accent-blue-light)' }} />
             User Management
           </h1>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
             Accounts are provisioned here — there is no self-registration.
           </p>
         </div>
 
         <div className="glass-card p-5">
-          <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Create User</h2>
+          <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Create User</h2>
           <div className="grid grid-cols-2 gap-3">
             <input className="search-input" placeholder="Username" value={username} onChange={e => setUsername(e.target.value)} />
             <input className="search-input" type="password" placeholder="Password (min 6 chars)" value={password} onChange={e => setPassword(e.target.value)} />
             <input className="search-input" placeholder="Full name (optional)" value={fullName} onChange={e => setFullName(e.target.value)} />
             <select
-              className="text-sm rounded px-3 py-2 outline-none"
+              className="text-[13px] rounded px-3 py-2 outline-none"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
               value={role}
               onChange={e => setRole(e.target.value as typeof ROLES[number])}
@@ -99,18 +99,18 @@ export default function UserManagement() {
 
         <div className="glass-card overflow-hidden">
           <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Users ({users.length})</h2>
+            <h2 className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>Users ({users.length})</h2>
           </div>
           {loading ? (
             <div className="flex items-center justify-center py-10 gap-3" style={{ color: 'var(--text-muted)' }}>
               <RadarLoader size={18} /> Loading…
             </div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['Username', 'Full Name', 'Role', 'Created', 'Status', ''].map(h => (
-                    <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
+                    <th key={h} className="text-left px-5 py-2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -121,7 +121,7 @@ export default function UserManagement() {
                     <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{u.full_name || '—'}</td>
                     <td className="px-5 py-3">
                       <select
-                        className="text-xs rounded px-2 py-1 outline-none"
+                        className="text-[13px] rounded px-2 py-1 outline-none"
                         style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
                         value={u.role}
                         onChange={e => changeRole(u, e.target.value)}

@@ -71,10 +71,10 @@ function TimelineRow({
       </div>
       <div className="flex-1 min-w-0 pb-2.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-mono font-semibold" style={{ color: 'var(--accent-blue-light)' }}>
+          <span className="text-[11px] font-mono font-semibold" style={{ color: 'var(--accent-blue-light)' }}>
             {format(new Date(sighting.timestamp), 'HH:mm')}
           </span>
-          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{sighting.camera_name}</span>
+          <span className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{sighting.camera_name}</span>
         </div>
         <div className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>Camera {sighting.camera_id}</div>
         <div className="flex items-center gap-1.5 flex-wrap mt-1.5">
@@ -322,7 +322,7 @@ export default function VehicleSearch() {
 
         {/* Error */}
         {error && (
-          <div className="mx-4 mt-4 p-3 rounded-lg text-sm" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: 'var(--accent-critical)' }}>
+          <div className="mx-4 mt-4 p-3 rounded-lg text-[13px]" style={{ background: 'rgba(230,57,70,0.1)', border: '1px solid rgba(230,57,70,0.3)', color: 'var(--accent-critical)' }}>
             {error}
           </div>
         )}
@@ -386,7 +386,7 @@ export default function VehicleSearch() {
             {history.total_sightings > 0 && (
               <button
                 type="button"
-                className="text-xs font-semibold flex items-center gap-1"
+                className="text-[13px] font-semibold flex items-center gap-1"
                 style={{ color: 'var(--accent-blue-light)', background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
                 onClick={() => document.getElementById('route-timeline-card')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
               >
@@ -401,7 +401,7 @@ export default function VehicleSearch() {
           {!history && !loading && (
             <div className="flex flex-col items-center justify-center h-full text-center" style={{ color: 'var(--text-muted)' }}>
               <Search size={32} className="mb-3 opacity-20" />
-              <div className="text-sm">Enter a license plate number</div>
+              <div className="text-[13px]">Enter a license plate number</div>
               <div className="text-xs mt-1">e.g. DL01AB1234</div>
             </div>
           )}
@@ -416,7 +416,7 @@ export default function VehicleSearch() {
           ))}
           {history && history.total_sightings === 0 && (
             <div className="text-center py-8" style={{ color: 'var(--text-muted)' }}>
-              <div className="text-sm">No sightings found for this plate.</div>
+              <div className="text-[13px]">No sightings found for this plate.</div>
             </div>
           )}
         </div>

@@ -31,11 +31,11 @@ function ProblemCard({ index, title, body, delay }: { index: string; title: stri
       className={`landing-reveal ${visible ? 'landing-reveal-visible' : ''} border-t p-6 md:p-8`}
       style={{ borderColor: 'var(--landing-border)', transitionDelay: visible ? `${delay}ms` : '0ms' }}
     >
-      <div className="text-sm mb-4" style={{ color: 'var(--landing-accent)', fontFamily: "'Space Grotesk', sans-serif" }}>
+      <div className="text-[12px] font-semibold mb-4" style={{ color: 'var(--landing-accent)', fontFamily: "'Space Grotesk', sans-serif" }}>
         {index}
       </div>
-      <h3 className="text-xl mb-3">{title}</h3>
-      <p className="text-sm leading-relaxed" style={{ color: 'var(--landing-ink-soft)' }}>
+      <h3 className="text-[14px] mb-3">{title}</h3>
+      <p className="text-[13px] leading-relaxed" style={{ color: 'var(--landing-ink-soft)' }}>
         {body}
       </p>
     </div>
@@ -54,8 +54,8 @@ export default function ProblemGrid() {
         <div className="text-xs tracking-[0.2em] mb-4" style={{ color: 'var(--landing-ink-faint)' }}>
           THE PROBLEM
         </div>
-        <h2 className="text-3xl md:text-4xl mb-4">Why cross-camera tracking is hard</h2>
-        <p className="text-base" style={{ color: 'var(--landing-ink-soft)' }}>
+        <h2 className="text-[18px] mb-4">Why cross-camera tracking is hard</h2>
+        <p className="text-[13px]" style={{ color: 'var(--landing-ink-soft)' }}>
           Reading a plate at one camera is the easy part. Reconstructing where a vehicle
           has been across a city-scale network, from imperfect footage and no shared
           coverage, is the actual engineering problem.

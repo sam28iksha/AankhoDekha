@@ -98,13 +98,13 @@ export default function LandingHero() {
             </span>
           </h1>
           <div
-            className="mt-1.5 text-white/80 text-base md:text-lg"
+            className="mt-1.5 text-white/80 text-[18px] font-bold"
             style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
           >
             The Eye of the City
           </div>
           <p
-            className="mt-4 text-white/85 text-base md:text-lg max-w-[46ch]"
+            className="mt-4 text-white/85 text-[13px] max-w-[46ch]"
             style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}
           >
             Real-time license-plate recognition and traffic intelligence, watching over the whole city at once.

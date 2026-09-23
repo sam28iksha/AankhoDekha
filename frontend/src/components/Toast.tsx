@@ -56,7 +56,7 @@ export default function Toast() {
             <Icon size={16} style={{ color, flexShrink: 0, marginTop: 2 }} />
             <div className="flex-1 min-w-0">
               <div className="text-xs font-semibold" style={{ color }}>{isAnomaly ? 'Route Anomaly' : 'Blacklist Hit'}</div>
-              <div className="text-sm font-mono font-bold mt-0.5" style={{ color: 'var(--text-primary)' }}>{t.plate_number}</div>
+              <div className="text-[13px] font-mono font-bold mt-0.5" style={{ color: 'var(--text-primary)' }}>{t.plate_number}</div>
               <div className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t.camera_name}</div>
               {isAnomaly && t.details && (
                 <div className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>{t.details}</div>

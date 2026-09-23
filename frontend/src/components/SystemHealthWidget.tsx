@@ -42,7 +42,7 @@ export function SystemHealthWidget() {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 text-white text-sm shadow-lg">
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4 text-white text-[13px] shadow-lg">
 
       {/* -------------------------------------------------- */}
       {/* Header */}
@@ -68,7 +68,7 @@ export function SystemHealthWidget() {
         {/* Frames */}
         <div className="bg-gray-800 p-2 rounded">
           <div>Frames Processed</div>
-          <div className="text-lg font-bold text-cyan-400">
+          <div className="text-[14px] font-bold text-cyan-400">
             {metrics.anpr.frames_processed}
           </div>
         </div>
@@ -76,7 +76,7 @@ export function SystemHealthWidget() {
         {/* Active Cameras */}
         <div className="bg-gray-800 p-2 rounded">
           <div>Active Cameras (30s)</div>
-          <div className="text-lg font-bold text-yellow-400">
+          <div className="text-[14px] font-bold text-yellow-400">
             {metrics.cameras.active_now} / {metrics.cameras.registered}
           </div>
         </div>
@@ -87,7 +87,7 @@ export function SystemHealthWidget() {
           title="Average PaddleOCR confidence of accepted plate reads"
         >
           <div>Read Confidence</div>
-          <div className="text-lg font-bold text-emerald-400">
+          <div className="text-[14px] font-bold text-emerald-400">
             {metrics.anpr.accepted_read_confidence}%
           </div>
         </div>
@@ -95,7 +95,7 @@ export function SystemHealthWidget() {
         {/* Events */}
         <div className="bg-gray-800 p-2 rounded">
           <div>Events Persisted</div>
-          <div className="text-lg font-bold text-purple-400">
+          <div className="text-[14px] font-bold text-purple-400">
             {metrics.anpr.events_persisted}
           </div>
         </div>
@@ -103,7 +103,7 @@ export function SystemHealthWidget() {
         {/* Plates Detected */}
         <div className="bg-gray-800 p-2 rounded">
           <div>YOLO Detections</div>
-          <div className="text-lg font-bold text-blue-400">
+          <div className="text-[14px] font-bold text-blue-400">
             {metrics.anpr.plates_detected}
           </div>
         </div>

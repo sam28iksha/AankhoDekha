@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { MapContainer, CircleMarker, Popup, Polyline, Marker, Tooltip, useMap } from 'react-leaflet'
+import { MapContainer, CircleMarker, Popup, Polyline, Marker, Tooltip, useMap, ZoomControl } from 'react-leaflet'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 // leaflet.heat patches L.heatLayer onto the Leaflet namespace
@@ -649,9 +649,15 @@ export default function MapView({
       center={center}
       zoom={12}
       style={{ height: '100%', width: '100%' }}
-      zoomControl={true}
+      zoomControl={false}
       className={lightBasemap ? 'map-light-theme' : basemapStyle === 'command-center' ? 'map-command-center' : undefined}
     >
+      {/* Bottom-right, not top-left — the Dashboard's KPI stat row is
+          absolutely positioned across the top of the map (top-3 left-3
+          right-3), which would otherwise sit on top of the default
+          top-left zoom control and hide it. */}
+      <ZoomControl position="bottomright" />
+
       <MapTilerVectorLayer
         styleUrl={`https://api.maptiler.com/maps/${import.meta.env.VITE_MAPTILER_STYLE_ID || '01a09471-e40d-74ac-b437-32d34209fd25'}/style.json?key=${import.meta.env.VITE_MAPTILER_KEY || 'KXVlZpvSDsmbvczfF0aU'}`}
         commandCenter={basemapStyle === 'command-center'}
@@ -669,7 +675,7 @@ export default function MapView({
         const popup = (
           <Popup>
             <div style={{ fontFamily: 'Inter, sans-serif', minWidth: '180px' }}>
-              <div style={{ fontWeight: 700, marginBottom: 4, color: '#FFFFFF' }}>{cam.name}</div>
+              <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4, color: '#FFFFFF' }}>{cam.name}</div>
               <div style={{ color: '#A8C2B0', fontSize: 12, marginBottom: 4 }}>{cam.road_segment}</div>
               <div style={{ fontSize: 12, color: '#A8C2B0' }}>
                 <span style={{ color: '#FFD21F', fontWeight: 600 }}>{count}</span> events (24h)

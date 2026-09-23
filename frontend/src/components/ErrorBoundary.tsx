@@ -33,10 +33,10 @@ export default class ErrorBoundary extends Component<Props, State> {
         <div className="flex h-full w-full flex-col items-center justify-center gap-4 p-8 text-center">
           <AlertTriangle size={40} style={{ color: 'var(--accent-red)' }} />
           <div>
-            <div className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
               This page hit an unexpected error
             </div>
-            <div className="text-sm mt-1" style={{ color: 'var(--text-muted)' }}>
+            <div className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>
               {this.state.error.message || 'Something went wrong rendering this view.'}
             </div>
           </div>

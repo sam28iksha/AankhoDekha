@@ -102,6 +102,44 @@
   --color-danger: var(--accent-red);
   --color-success: var(--accent-green);
   --color-info: var(--accent-info);
+
+  /* ── Compact typography scale (spec-driven — every font-size/font-weight
+     rule below should reference one of these tokens rather than an ad-hoc
+     value, so the whole app reads as one consistent, compact scale instead
+     of the oversized type introduced by the frontend-redesign merge). ──── */
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+
+  --fs-h1: 18px;             /* main page headings */
+  --fw-h1: var(--fw-bold);
+  --fs-h2: 13px;             /* section headings */
+  --fw-h2: var(--fw-bold);
+  --fs-card-title: 12px;     /* card titles */
+  --fw-card-title: var(--fw-bold);
+  --fs-stat: 19px;           /* large dashboard numbers/statistics */
+  --fw-stat: var(--fw-bold);
+  --fs-nav: 11px;            /* sidebar nav + top header nav text */
+  --fw-nav: var(--fw-semibold);
+  --fs-body: 11px;           /* normal body text */
+  --fw-body: var(--fw-medium);
+  --fs-secondary: 10px;      /* secondary/helper text */
+  --fw-secondary: var(--fw-medium);
+  --fs-button: 11px;
+  --fw-button: var(--fw-semibold);
+  --fs-input: 11px;          /* input text + placeholders */
+  --fs-table-head: 10px;     /* table headers */
+  --fw-table-head: var(--fw-bold);
+  --fs-table-body: 11px;     /* table/body text */
+  --fs-badge: 10px;          /* badges/status labels */
+  --fw-badge: var(--fw-semibold);
+  --fs-plate: 11px;          /* number plates */
+  --fw-plate: var(--fw-bold);
+  --fs-telemetry-label: 10px; /* telemetry labels */
+  --fs-telemetry-value: 12px; /* telemetry values */
+  --fw-telemetry-value: var(--fw-bold);
+  --fs-caption: 9px;         /* small captions/timestamps */
 }
 
 * {
@@ -127,7 +165,8 @@ body {
      hand-editing each page. Anything with its own Tailwind font-weight
      class (font-semibold, font-bold, etc.) is unaffected — those are more
      specific and still win. */
-  font-weight: 500;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -137,12 +176,14 @@ body {
    labels read as headers/labels everywhere, consistent with the 500
    baseline above. */
 th {
-  font-weight: 700;
+  font-size: var(--fs-table-head);
+  font-weight: var(--fw-table-head);
   background: var(--bg-secondary);
 }
 
 label {
-  font-weight: 600;
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-semibold);
 }
 
 /* Table structure fallback — every page's tables render plain <table>
@@ -238,12 +279,12 @@ tbody tr:hover {
 .plate-badge {
   font-family: 'JetBrains Mono', monospace;
   background: #FFFFFF;
-  border: 2px solid var(--text-primary);
-  border-radius: 6px;
-  padding: 4px 12px;
+  border: 1.5px solid var(--text-primary);
+  border-radius: 5px;
+  padding: 2px 8px;
   letter-spacing: 0.12em;
-  font-weight: 700;
-  font-size: 1rem;
+  font-weight: var(--fw-plate);
+  font-size: var(--fs-plate);
   color: var(--text-primary);
   text-transform: uppercase;
   box-shadow: 0 1px 2px rgba(7, 19, 15, 0.15);
@@ -324,7 +365,7 @@ tbody tr:hover {
 .leaflet-control-attribution {
   background: rgba(255, 255, 255, 0.85) !important;
   color: var(--text-muted) !important;
-  font-size: 10px;
+  font-size: var(--fs-caption);
 }
 
 .leaflet-control-zoom a {
@@ -505,14 +546,14 @@ tbody tr:hover {
 }
 
 .trajectory-stop-label-name {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-bold);
   color: #FFFFFF;
   white-space: nowrap;
 }
 
 .trajectory-stop-label-meta {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: #B8C9BE;
   font-family: 'JetBrains Mono', monospace;
   white-space: nowrap;
@@ -524,8 +565,8 @@ tbody tr:hover {
   border-radius: 4px;
   background: rgba(230, 57, 70, 0.2);
   color: #FF8A94;
-  font-size: 10px;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
   white-space: nowrap;
 }
 
@@ -544,8 +585,8 @@ tbody tr:hover {
 }
 
 .map-trajectory-legend-title {
-  font-size: 11px;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.06em;
   color: #FFFFFF;
   margin-bottom: 6px;
@@ -555,7 +596,7 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   gap: 7px;
-  font-size: 11px;
+  font-size: var(--fs-secondary);
   color: #B8C9BE;
   padding: 2px 0;
 }
@@ -624,7 +665,7 @@ tbody tr:hover {
 }
 
 .map-sim-legend-density-label {
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: #B8C9BE;
   margin-top: 6px;
 }
@@ -679,7 +720,7 @@ tbody tr:hover {
 }
 
 .playback-time {
-  font-size: 11px;
+  font-size: var(--fs-caption);
   font-variant-numeric: tabular-nums;
   color: #B8C9BE;
   white-space: nowrap;
@@ -688,7 +729,7 @@ tbody tr:hover {
 
 .playback-speed-select {
   flex-shrink: 0;
-  font-size: 11px;
+  font-size: var(--fs-input);
   padding: 4px 8px;
   border-radius: 6px;
   background: rgba(255, 255, 255, 0.08);
@@ -716,8 +757,8 @@ tbody tr:hover {
   background: #0B1F18;
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: #B8C9BE;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 8px 20px rgba(7, 19, 15, 0.35);
@@ -766,14 +807,14 @@ tbody tr:hover {
 }
 
 .sim-stat-value {
-  font-size: 1.125rem;
-  font-weight: 700;
+  font-size: var(--fs-telemetry-value);
+  font-weight: var(--fw-telemetry-value);
   font-family: 'JetBrains Mono', monospace;
   color: #EAF2EC;
 }
 
 .sim-stat-label {
-  font-size: 0.625rem;
+  font-size: var(--fs-telemetry-label);
   color: #A8B8AE;
   margin-top: 2px;
 }
@@ -802,8 +843,8 @@ tbody tr:hover {
   border: none;
   background: transparent;
   color: #91A69A;
-  font-size: 11px;
-  font-weight: 600;
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   white-space: nowrap;
@@ -836,7 +877,7 @@ tbody tr:hover {
   border-radius: 8px;
   background: #07130F;
   border: 1px solid #315C3A;
-  font-size: 10.5px;
+  font-size: var(--fs-secondary);
   color: #B8C9BE;
 }
 
@@ -852,7 +893,7 @@ tbody tr:hover {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
   white-space: nowrap;
 }
 
@@ -866,7 +907,7 @@ tbody tr:hover {
 
 .map-route-info-stats {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-size: var(--fs-caption);
   color: #B8C9BE;
   white-space: nowrap;
 }
@@ -1141,15 +1182,15 @@ tbody tr:hover {
 }
 
 .city-skyline-tagline-primary {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-h2);
   letter-spacing: 0.5px;
   line-height: 1.2;
 }
 
 .city-skyline-tagline-secondary {
-  font-size: 18px;
-  font-weight: 500;
+  font-size: var(--fs-body);
+  font-weight: var(--fw-body);
   letter-spacing: 0.35px;
   line-height: 1.2;
   color: rgba(232, 240, 235, 0.92);
@@ -1183,10 +1224,10 @@ tbody tr:hover {
     margin-top: 14px;
   }
   .city-skyline-tagline-primary {
-    font-size: 20px;
+    font-size: var(--fs-h2);
   }
   .city-skyline-tagline-secondary {
-    font-size: 16px;
+    font-size: var(--fs-body);
   }
 }
 
@@ -1216,13 +1257,13 @@ tbody tr:hover {
 }
 
 .city-skyline-panel-compact .city-skyline-tagline-primary {
-  font-size: 15px;
-  font-weight: 700;
+  font-size: var(--fs-card-title);
+  font-weight: var(--fw-card-title);
 }
 
 .city-skyline-panel-compact .city-skyline-tagline-secondary {
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-medium);
 }
 
 /* ── Page titles — signature "command center" heading pattern ─────────
@@ -1231,8 +1272,8 @@ tbody tr:hover {
    plain <h1>. Reads as one deliberate system, not a generic dashboard. */
 .page-kicker {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8125rem;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.16em;
   color: var(--brand);
   margin-bottom: 2px;
@@ -1241,8 +1282,8 @@ tbody tr:hover {
 .page-title {
   position: relative;
   padding-left: 14px;
-  font-size: 1.5rem;
-  font-weight: 800;
+  font-size: var(--fs-h1);
+  font-weight: var(--fw-h1);
   color: var(--text-primary);
   letter-spacing: 0.01em;
 }
@@ -1262,8 +1303,8 @@ tbody tr:hover {
 .page-title-sm {
   position: relative;
   padding-left: 11px;
-  font-size: 1.0625rem;
-  font-weight: 700;
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-h2);
   color: var(--text-primary);
 }
 
@@ -1299,29 +1340,6 @@ tbody tr:hover {
   border-color: var(--border) !important;
   border-radius: 8px !important;
   color: var(--text-primary) !important;
-}
-
-/* ── Command header (top app bar — white, sits beside the green sidebar) ── */
-.command-header {
-  height: 60px;
-  background: var(--bg-card);
-  border-bottom: 1px solid var(--border);
-}
-
-.command-logo-badge {
-  width: 34px;
-  height: 34px;
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, var(--brand-dark) 0%, var(--brand) 60%, var(--brand-light) 100%);
-  animation: logoBreathe 3.4s ease-in-out infinite;
-}
-
-@keyframes logoBreathe {
-  0%, 100% { box-shadow: 0 0 10px rgba(79, 138, 98, 0.35); }
-  50% { box-shadow: 0 0 16px rgba(79, 138, 98, 0.55); }
 }
 
 /* ── Brand logo image + wordmark (AankhoDekha mark, used in the sidebar
@@ -1394,29 +1412,14 @@ tbody tr:hover {
   font-family: 'JetBrains Mono', monospace;
 }
 
-/* Live HH:MM:SS clock — a command-center reads as "watching in real time"
-   the instant it loads, before any data has arrived. Tabular-nums keeps
-   the digits from jittering the layout as they tick over. */
-.nav-clock {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text-secondary);
-  letter-spacing: 0.06em;
-  padding: 4px 9px;
-  border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg-secondary);
-}
-
 .nav-status-pill {
   display: flex;
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
   border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 700;
+  font-size: var(--fs-badge);
+  font-weight: var(--fw-badge);
   letter-spacing: 0.06em;
 }
 
@@ -1474,8 +1477,8 @@ tbody tr:hover {
 }
 
 .command-sidebar-tagline {
-  font-size: 12px;
-  font-weight: 500;
+  font-size: var(--fs-secondary);
+  font-weight: var(--fw-medium);
   color: rgba(234, 242, 236, 0.65);
   text-align: center;
 }
@@ -1491,8 +1494,8 @@ tbody tr:hover {
 
 .command-sidebar-section {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.75rem;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.13em;
   color: rgba(234, 242, 236, 0.4);
   padding: 14px 17px 6px;
@@ -1523,8 +1526,8 @@ tbody tr:hover {
   border-radius: 8px;
   color: var(--text-on-brand);
   opacity: 0.72;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: var(--fs-nav);
+  font-weight: var(--fw-nav);
   cursor: pointer;
   transition: all 0.16s ease;
   text-decoration: none;
@@ -1545,7 +1548,7 @@ tbody tr:hover {
   border-left-color: var(--brand-light);
   color: #FFFFFF;
   opacity: 1;
-  font-weight: 700;
+  font-weight: var(--fw-bold);
 }
 
 .nav-item.active::after {
@@ -1562,8 +1565,8 @@ tbody tr:hover {
   border-radius: 999px;
   background: var(--accent-red);
   color: white;
-  font-size: 0.625rem;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-semibold);
   box-shadow: 0 0 8px rgba(230, 57, 70, 0.4);
   margin-left: auto;
 }
@@ -1604,8 +1607,8 @@ tbody tr:hover {
   padding: 10px 16px;
   color: var(--text-primary);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: var(--fs-input);
+  font-weight: var(--fw-medium);
   width: 100%;
   outline: none;
   transition: all 0.2s ease;
@@ -1697,8 +1700,8 @@ tbody tr:hover {
   align-items: center;
   gap: 5px;
   padding: 6px 8px 4px;
-  font-size: 0.625rem;
-  font-weight: 700;
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-bold);
   letter-spacing: 0.08em;
   color: var(--text-muted);
 }
@@ -1730,7 +1733,7 @@ tbody tr:hover {
 }
 
 .suggest-row-count {
-  font-size: 0.7rem;
+  font-size: var(--fs-caption);
   color: var(--text-muted);
   white-space: nowrap;
   flex-shrink: 0;
@@ -1743,8 +1746,8 @@ tbody tr:hover {
   border: none;
   border-radius: 8px;
   padding: 10px 20px;
-  font-size: 0.9375rem;
-  font-weight: 700;
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
   cursor: pointer;
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(79, 138, 98, 0.28);
@@ -1766,8 +1769,8 @@ tbody tr:hover {
   border: 1px solid var(--brand);
   border-radius: 8px;
   padding: 10px 20px;
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
   cursor: pointer;
   transition: all 0.2s ease;
 }
@@ -1866,11 +1869,11 @@ tbody tr:hover {
 .tag {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 0.8125rem;
-  font-weight: 600;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: var(--fs-badge);
+  font-weight: var(--fw-badge);
 }
 
 .tag-blue { background: rgba(0, 184, 217, 0.12); color: #0089A3; border: 1px solid rgba(0, 184, 217, 0.32); }

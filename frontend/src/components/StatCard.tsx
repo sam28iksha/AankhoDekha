@@ -45,12 +45,12 @@ export default function StatCard({ label, value, icon: Icon, color, id, sublabel
   return (
     <div className={`stat-card${flash ? ' stat-card-flash' : ''}`} id={id} style={cardStyle}>
       <div className="flex items-center justify-between mb-3">
-        <span className="text-xs uppercase tracking-wider" style={{ color: theme?.label ?? 'var(--text-muted)', fontWeight: theme?.label ? 700 : 500 }}>{label}</span>
+        <span className="text-xs uppercase tracking-wider font-semibold" style={{ color: theme?.label ?? 'var(--text-muted)' }}>{label}</span>
         <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${color}20`, border: `1px solid ${color}30` }}>
           <Icon size={14} color={color} />
         </div>
       </div>
-      <div className="text-2xl font-bold" style={{ color: theme?.value ?? 'var(--text-primary)', fontWeight: theme?.value ? 800 : undefined }}>{displayText}</div>
+      <div className="font-bold" style={{ fontSize: 'var(--fs-stat)', color: theme?.value ?? 'var(--text-primary)' }}>{displayText}</div>
       {sublabel && (
         <div className="text-xs mt-1 truncate" style={{ color: 'var(--text-muted)' }}>{sublabel}</div>
       )}

@@ -66,7 +66,7 @@ export default function Analytics() {
         <div>
           <div className="page-kicker">CITYWIDE INTELLIGENCE</div>
           <h1 className="page-title">Traffic Analytics</h1>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>City-wide patterns · Last 24 hours</p>
+          <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>City-wide patterns · Last 24 hours</p>
         </div>
 
         {/* ── Hero stat cards ───────────────────────────────── */}
@@ -105,7 +105,7 @@ export default function Analytics() {
 
         {/* ── GIS congestion map ─────────────────────────────── */}
         <div className="glass-card p-5" id="analytics-map" style={{ height: 380 }}>
-          <h2 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
             🗺️ City Traffic Heatmap & Congestion Overlay
           </h2>
           <div className="map-frame" style={{ height: 'calc(100% - 32px)' }}>
@@ -130,16 +130,16 @@ export default function Analytics() {
 
         {/* ── Traffic flow trend ─────────────────────────────── */}
         <div className="glass-card p-5" id="trend-chart">
-          <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             📈 Traffic Flow Trend (Last 24h)
           </h2>
           {trendData.length === 0 && !loading ? (
-            <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>No data yet — run ingestion first.</div>
+            <div className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>No data yet — run ingestion first.</div>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={trendData} margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} />
+                <XAxis dataKey="label" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                 <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11 }} />
                 <Tooltip
                   contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }}
@@ -153,18 +153,18 @@ export default function Analytics() {
 
         {/* ── Density bar chart ─────────────────────────────── */}
         <div className="glass-card p-5" id="density-chart">
-          <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             📊 Traffic Volume per Camera (24h)
           </h2>
           {density.length === 0 && !loading ? (
-            <div className="text-center py-8 text-sm" style={{ color: 'var(--text-muted)' }}>No data yet — run ingestion first.</div>
+            <div className="text-center py-8 text-[13px]" style={{ color: 'var(--text-muted)' }}>No data yet — run ingestion first.</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={density} margin={{ top: 0, right: 20, left: 0, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="camera_name"
-                  tick={{ fill: 'var(--text-muted)', fontSize: 10 }}
+                  tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                   angle={-35}
                   textAnchor="end"
                   interval={0}
@@ -184,11 +184,11 @@ export default function Analytics() {
         <div className="grid grid-cols-2 gap-6">
           {/* ── OD Flow table ─────────────────────────────── */}
           <div className="glass-card p-5" id="od-flows">
-            <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               🔀 Origin-Destination Flows (Top 10)
             </h2>
             {topFlows.length === 0 ? (
-              <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-center py-6 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                 Need multi-camera sightings to compute flows.
               </div>
             ) : (
@@ -201,7 +201,7 @@ export default function Analytics() {
                       <ArrowRight size={12} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
                       <span className="truncate" style={{ color: 'var(--text-secondary)' }}>{cameraNames[f.destination] || f.destination}</span>
                     </div>
-                    <span className="font-mono font-bold text-xs flex-shrink-0" style={{ color: 'var(--accent-blue-light)' }}>{f.count}</span>
+                    <span className="font-mono font-bold text-[13px] flex-shrink-0" style={{ color: 'var(--accent-blue-light)' }}>{f.count}</span>
                   </div>
                 ))}
               </div>
@@ -210,11 +210,11 @@ export default function Analytics() {
 
           {/* ── Speed estimates ───────────────────────────── */}
           <div className="glass-card p-5" id="speed-estimates">
-            <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
               🚗 Avg Speed Between Camera Pairs
             </h2>
             {topSpeeds.length === 0 ? (
-              <div className="text-center py-6 text-sm" style={{ color: 'var(--text-muted)' }}>
+              <div className="text-center py-6 text-[13px]" style={{ color: 'var(--text-muted)' }}>
                 Need multi-camera trajectories to estimate speed.
               </div>
             ) : (
@@ -225,8 +225,8 @@ export default function Analytics() {
                   n: s.sample_count,
                 }))} layout="vertical" margin={{ left: 0, right: 20, top: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
-                  <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} unit=" km/h" />
-                  <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 10 }} width={60} />
+                  <XAxis type="number" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} unit=" km/h" />
+                  <YAxis type="category" dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11 }} width={60} />
                   <Tooltip
                     contentStyle={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 8 }}
                     labelStyle={{ color: 'var(--text-primary)' }}
@@ -241,15 +241,15 @@ export default function Analytics() {
 
         {/* ── Congestion table ──────────────────────────────── */}
         <div className="glass-card p-5" id="congestion-table">
-          <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             🚦 Congestion & Bottleneck Status
           </h2>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)' }}>
                   {['Camera', 'Road', 'Current Events', 'Baseline', 'Score', 'Status'].map(h => (
-                    <th key={h} className="text-left pb-2 pr-4 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
+                    <th key={h} className="text-left pb-2 pr-4 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
