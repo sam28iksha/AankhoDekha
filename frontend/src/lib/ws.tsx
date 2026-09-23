@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useCallback, useState, ReactNode } from 'react'
 import { getStoredAuth } from './authToken'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000'
+const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+const WS_URL = `${WS_PROTOCOL}//${window.location.host}`
 
 export interface WSMessage {
   type: 'alert' | 'alert_resolved' | 'connected' | 'pong' | 'ping'

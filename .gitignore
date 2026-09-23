@@ -19,10 +19,10 @@ env/
 .env
 !.env.example
 
-# Database
-data/aankhodekha.db
-data/aankhodekha.db-shm
-data/aankhodekha.db-wal
+# Database — runtime only
+data/*.db
+data/*.db-shm
+data/*.db-wal
 
 # Snapshots
 data/snapshots/
@@ -43,6 +43,14 @@ data/sample_videos/*.avi
 data/sample_videos/*.mov
 data/sample_videos/*.mkv
 data/sample_videos/*.webm
+
+# Force-track the lightweight demo pack
+!data/sample_videos/cam_01.mp4
+!data/sample_videos/cam_03.mp4
+!data/sample_videos/cam_04.mp4
+!data/sample_videos/cam_07.mp4
+!data/sample_videos/cam_09.mp4
+!data/sample_videos/cam_12.mp4
 
 # YOLO model weights (large — don't commit)
 models/*.pt

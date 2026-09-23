@@ -132,7 +132,7 @@ export default function Dashboard() {
   const fetchMetrics = useCallback(async () => {
     try {
       // Clean, public fetch. No token needed!
-      const res = await fetch('http://localhost:8000/health/metrics')
+      const res = await fetch('/api/health/metrics')
       if (res.ok) {
         const data = await res.json()
         setMetrics(data)

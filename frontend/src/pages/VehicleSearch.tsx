@@ -92,12 +92,12 @@ function LegConnector({ leg }: { leg: TrajectoryLeg }) {
           {leg.distance_km} km in {leg.duration_label}
         </span>
 
-        {leg.avg_speed_kmh != null && (
-          <span className="flex items-center gap-1">
-            <Gauge size={10} />
-            {leg.avg_speed_kmh} km/h
-          </span>
-        )}
+        {leg.avg_speed_kmh != null && leg.avg_speed_kmh < 200 && (
+  <span className="flex items-center gap-1">
+    <Gauge size={10} />
+    {leg.avg_speed_kmh} km/h
+  </span>
+)}
       </div>
     </div>
   )

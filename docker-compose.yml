@@ -55,9 +55,6 @@ services:
       dockerfile: Dockerfile
     container_name: aankhodekha_frontend
     restart: unless-stopped
-    environment:
-      - VITE_API_URL=http://localhost:${BACKEND_PORT:-8000}
-      - VITE_WS_URL=ws://localhost:${BACKEND_PORT:-8000}
     ports:
       - "${FRONTEND_PORT:-5173}:80"
     depends_on:

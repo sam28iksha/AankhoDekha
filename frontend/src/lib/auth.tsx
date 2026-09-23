@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useCallback, ReactNode } from 'rea
 import axios from 'axios'
 import { getStoredAuth, setStoredAuth, clearStoredAuth, type StoredAuth } from './authToken'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE_URL = '/api'
 
 interface AuthContextValue {
   user: StoredAuth | null

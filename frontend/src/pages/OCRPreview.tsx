@@ -407,7 +407,11 @@ export default function OCRPreview() {
                     )}
                     alt={`frame ${currentFrame.index}`}
                     className="w-full"
-                    style={{ display: 'block' }}
+                    style={{ display: 'block',
+                              width: '100%',
+                              maxHeight: '600px',
+                              objectFit: 'contain',
+                     }}
                   />
                 )}
               </div>

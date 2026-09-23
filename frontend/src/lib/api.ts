@@ -1,7 +1,7 @@
 import axios from 'axios'
 import { getStoredAuth, clearStoredAuth } from './authToken'
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const BASE_URL = '/api'
 
 export const api = axios.create({
   baseURL: BASE_URL,
@@ -399,7 +399,7 @@ export const getAuditLog = (params?: { username?: string; action?: string; limit
 // frontend/src/lib/api.ts (or your existing API helper file)
 export async function fetchSystemMetrics() {
   const token = localStorage.getItem("token"); // Adjust based on your auth key
-  const response = await fetch("http://localhost:8000/health/metrics", {
+  const response = await fetch("/api/health/metrics", {
     headers: {
       "Authorization": `Bearer ${token}`,
       "accept": "application/json"
