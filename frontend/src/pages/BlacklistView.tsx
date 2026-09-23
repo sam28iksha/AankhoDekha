@@ -134,7 +134,7 @@ export default function BlacklistView() {
             <Ban size={18} style={{ color: 'var(--accent-red)' }} />
             Blacklist &amp; Real-Time Detection Test
           </h1>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
             Add plates to the watchlist — this only updates the list, it doesn't fire an alert by itself. Real alerts fire when actual footage is processed and a match is found (upload below, or process a live camera feed).
           </p>
         </div>
@@ -142,7 +142,7 @@ export default function BlacklistView() {
         <div className="grid grid-cols-2 gap-6">
           {/* ── Add plate form ─────────────────────────────── */}
           <div className="glass-card p-5" id="blacklist-add-form">
-            <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Add Plate to Blacklist</h2>
+            <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Add Plate to Blacklist</h2>
             {!canEdit ? (
               <div className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>
                 Your role ({user?.role}) is read-only here. Adding plates requires the investigator role.
@@ -182,7 +182,7 @@ export default function BlacklistView() {
 
           {/* ── Test upload ─────────────────────────────────── */}
           <div className="glass-card p-5" id="test-upload-panel">
-            <h2 className="text-sm font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>Test Detection Upload</h2>
+            <h2 className="text-sm font-bold mb-4" style={{ color: 'var(--text-primary)' }}>Test Detection Upload</h2>
             {!canEdit ? (
               <div className="text-xs py-6 text-center" style={{ color: 'var(--text-muted)' }}>
                 Your role ({user?.role}) is read-only here. Running detection tests requires the investigator role.
@@ -205,12 +205,12 @@ export default function BlacklistView() {
               {file ? (
                 <>
                   {file.type.startsWith('video') ? <FileVideo size={24} style={{ color: 'var(--accent-blue-light)' }} /> : <FileImage size={24} style={{ color: 'var(--accent-blue-light)' }} />}
-                  <div className="text-sm" style={{ color: 'var(--text-primary)' }}>{file.name}</div>
+                  <div className="text-[13px]" style={{ color: 'var(--text-primary)' }}>{file.name}</div>
                 </>
               ) : (
                 <>
                   <UploadCloud size={24} style={{ color: 'var(--text-muted)' }} />
-                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Click to choose a photo or video</div>
+                  <div className="text-[13px]" style={{ color: 'var(--text-secondary)' }}>Click to choose a photo or video</div>
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>Runs the ANPR pipeline and alerts on any blacklist hit</div>
                 </>
               )}
@@ -259,7 +259,7 @@ export default function BlacklistView() {
                         border: `1px solid ${d.blacklisted ? 'rgba(230,57,70,0.3)' : 'rgba(34,197,94,0.2)'}`,
                       }}
                     >
-                      <span className={`plate-badge ${d.blacklisted ? 'blacklisted' : ''}`} style={{ fontSize: '0.7rem', padding: '2px 8px' }}>{d.plate_number}</span>
+                      <span className={`plate-badge ${d.blacklisted ? 'blacklisted' : ''}`} style={{ padding: '2px 8px' }}>{d.plate_number}</span>
                       {d.blacklisted ? (
                         <span className="tag tag-red flex items-center gap-1"><AlertTriangle size={10} />Blacklist hit</span>
                       ) : (
@@ -279,8 +279,8 @@ export default function BlacklistView() {
 
         {/* ── Current blacklist ───────────────────────────────── */}
         <div className="glass-card overflow-hidden" id="blacklist-table">
-          <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--border)' }}>
-            <h2 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+          <div className="px-4 py-2.5" style={{ borderBottom: '1px solid var(--border)' }}>
+            <h2 className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
               Current Blacklist ({entries.length})
             </h2>
           </div>
@@ -289,56 +289,56 @@ export default function BlacklistView() {
               <RadarLoader size={18} /> Loading…
             </div>
           ) : entries.length === 0 ? (
-            <div className="text-center py-10 text-sm" style={{ color: 'var(--text-muted)' }}>No plates blacklisted yet.</div>
+            <div className="text-center py-10 text-[11px]" style={{ color: 'var(--text-muted)' }}>No plates blacklisted yet.</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-[11px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['Plate', 'Reason', 'Added', 'Alerts', ''].map(h => (
-                    <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
+                    <th key={h} className="text-left px-3 py-1 text-[10px] font-bold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {entries.map(e => (
                   <tr key={e.plate_number} style={{ borderBottom: '1px solid var(--border)' }}>
-                    <td className="px-5 py-3"><span className="plate-badge blacklisted" style={{ fontSize: '0.75rem' }}>{e.plate_number}</span></td>
-                    <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{e.reason || '—'}</td>
-                    <td className="px-5 py-3 text-xs" style={{ color: 'var(--text-muted)' }}>{format(new Date(e.added_at), 'dd MMM yyyy HH:mm')}</td>
-                    <td className="px-5 py-3">
+                    <td className="px-3 py-1.5"><span className="plate-badge blacklisted">{e.plate_number}</span></td>
+                    <td className="px-3 py-1.5 text-[10px]" style={{ color: 'var(--text-secondary)' }}>{e.reason || '—'}</td>
+                    <td className="px-3 py-1.5 text-[10px]" style={{ color: 'var(--text-muted)' }}>{format(new Date(e.added_at), 'dd MMM yyyy HH:mm')}</td>
+                    <td className="px-3 py-1.5">
                       <Link
                         to={`/alerts?plate=${encodeURIComponent(e.plate_number)}`}
-                        className="text-xs flex items-center gap-1 hover:underline"
+                        className="text-[10px] flex items-center gap-1 hover:underline"
                         style={{ color: 'var(--accent-blue-light)' }}
                       >
-                        View alerts <ExternalLink size={11} />
+                        View alerts <ExternalLink size={10} />
                       </Link>
                     </td>
-                    <td className="px-5 py-3 flex items-center gap-2">
+                    <td className="px-3 py-1.5 flex items-center gap-1.5">
                       {canEdit ? (
                         <>
                           <button
                             id={`blacklist-simulate-${e.plate_number}`}
-                            className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                            className="btn-secondary py-0.5 px-2 text-[10px] flex items-center gap-1"
                             onClick={() => handleSimulate(e.plate_number)}
                             disabled={simulating === e.plate_number}
                             title="Fires a clearly-labeled simulated alert — demo fallback, not a real detection"
                           >
-                            {simulating === e.plate_number ? <RadarLoader size={11} /> : <Clapperboard size={11} />}
+                            {simulating === e.plate_number ? <RadarLoader size={10} /> : <Clapperboard size={10} />}
                             Simulate sighting
                           </button>
                           <button
                             id={`blacklist-remove-${e.plate_number}`}
-                            className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                            className="btn-secondary py-0.5 px-2 text-[10px] flex items-center gap-1"
                             onClick={() => handleRemove(e.plate_number)}
                             disabled={removing === e.plate_number}
                           >
-                            {removing === e.plate_number ? <RadarLoader size={11} /> : <Trash2 size={11} />}
+                            {removing === e.plate_number ? <RadarLoader size={10} /> : <Trash2 size={10} />}
                             Remove
                           </button>
                         </>
                       ) : (
-                        <span className="text-xs" style={{ color: 'var(--text-muted)' }}>—</span>
+                        <span className="text-[10px]" style={{ color: 'var(--text-muted)' }}>—</span>
                       )}
                     </td>
                   </tr>

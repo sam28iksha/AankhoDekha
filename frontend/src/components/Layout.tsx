@@ -11,22 +11,6 @@ import ErrorBoundary from './ErrorBoundary'
 import CitySkylinePanel from './CitySkylinePanel'
 import brandLogo from '../assets/aankhodekha-logo.png'
 
-// Command-center touch — a live clock reinforces "this is a monitoring
-// system watching in real time" the moment the header loads, before any
-// data has even arrived.
-function LiveClock() {
-  const [now, setNow] = useState(() => new Date())
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(t)
-  }, [])
-  return (
-    <span className="nav-clock" id="nav-live-clock">
-      {now.toLocaleTimeString('en-GB', { hour12: false })}
-    </span>
-  )
-}
-
 const NAV_ITEMS = [
   { to: '/dashboard', label: 'Live Map', icon: Map, id: 'nav-dashboard' },
   { to: '/vehicle', label: 'Vehicle Search', icon: Search, id: 'nav-vehicle' },
@@ -133,7 +117,7 @@ export default function Layout() {
             <button
               id="logout-btn"
               onClick={logout}
-              className="flex items-center gap-1.5 text-xs p-1.5 rounded transition-colors hover:bg-white/10 flex-shrink-0"
+              className="flex items-center gap-1.5 text-[13px] font-semibold p-1.5 rounded transition-colors hover:bg-white/10 flex-shrink-0"
               style={{ color: 'rgba(234, 242, 236, 0.7)' }}
               title="Log out"
             >
@@ -143,12 +127,8 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* ── Main column: white header + page content ────────────────────── */}
+      {/* ── Main column: page content ────────────────────────────────────── */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <header className="command-header flex items-center justify-end gap-4 px-6 flex-shrink-0">
-          <LiveClock />
-        </header>
-
         <main className="flex-1 overflow-hidden page-fade-in" key={location.pathname}>
           <ErrorBoundary>
             <Outlet />

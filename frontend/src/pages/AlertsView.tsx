@@ -103,7 +103,7 @@ export default function AlertsView() {
           <h1 className="page-title-sm">Alerts Center</h1>
           {unresolvedCount > 0 && (
             <span
-              className="px-2 py-0.5 rounded-full text-xs font-bold alert-pulse"
+              className="px-2 py-0.5 rounded-full text-xs font-semibold alert-pulse"
               style={{ background: 'var(--accent-red)', color: 'white' }}
             >
               {unresolvedCount} ACTIVE
@@ -128,7 +128,7 @@ export default function AlertsView() {
               id="filter-type"
               value={filterType}
               onChange={e => setFilterType(e.target.value)}
-              className="text-xs rounded px-2 py-1.5 outline-none"
+              className="text-[13px] rounded px-2 py-1.5 outline-none"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
             >
               <option value="all">All Types</option>
@@ -140,7 +140,7 @@ export default function AlertsView() {
             id="filter-resolved"
             value={filterResolved}
             onChange={e => setFilterResolved(e.target.value)}
-            className="text-xs rounded px-2 py-1.5 outline-none"
+            className="text-[13px] rounded px-2 py-1.5 outline-none"
             style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
             <option value="all">All Status</option>
@@ -172,15 +172,15 @@ export default function AlertsView() {
         ) : alerts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full" style={{ color: 'var(--text-muted)' }}>
             <CheckCircle2 size={36} className="mb-3 opacity-20" />
-            <div className="text-sm">No alerts match your filters.</div>
+            <div className="text-[13px]">No alerts match your filters.</div>
           </div>
         ) : (
           <div className="glass-card overflow-hidden" id="alerts-table">
-            <table className="w-full text-sm">
+            <table className="w-full text-[11px]">
               <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
+                <tr style={{ borderBottom: '3px solid var(--brand)', background: 'var(--bg-secondary)' }}>
                   {['#', 'Plate', 'Camera', 'Type', 'Source', 'Time', 'Details', 'Status', 'Action'].map(h => (
-                    <th key={h} className="text-left px-4 py-3 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
+                    <th key={h} className="text-left px-3 py-3.5 text-[12px] font-bold uppercase tracking-wide" style={{ color: 'var(--text-primary)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -194,41 +194,41 @@ export default function AlertsView() {
                       opacity: alert.resolved ? 0.55 : 1,
                     }}
                   >
-                    <td className="px-4 py-3 text-xs font-mono" style={{ color: 'var(--text-muted)' }}>#{alert.id}</td>
-                    <td className="px-4 py-3">
-                      <span className={`plate-badge ${!alert.resolved ? 'blacklisted' : ''}`} style={{ fontSize: '0.75rem' }}>
+                    <td className="px-3 py-1.5 text-[10px] font-mono" style={{ color: 'var(--text-muted)' }}>#{alert.id}</td>
+                    <td className="px-3 py-1.5">
+                      <span className={`plate-badge ${!alert.resolved ? 'blacklisted' : ''}`}>
                         {alert.plate_number}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>{alert.camera_name}</td>
-                    <td className="px-4 py-3"><AlertTypeBadge type={alert.alert_type} /></td>
-                    <td className="px-4 py-3"><SourceBadge source={alert.source} /></td>
-                    <td className="px-4 py-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <td className="px-3 py-1.5 text-[10px]" style={{ color: 'var(--text-secondary)' }}>{alert.camera_name}</td>
+                    <td className="px-3 py-1.5"><AlertTypeBadge type={alert.alert_type} /></td>
+                    <td className="px-3 py-1.5"><SourceBadge source={alert.source} /></td>
+                    <td className="px-3 py-1.5 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
                       <div>{format(new Date(alert.timestamp), 'dd MMM HH:mm:ss')}</div>
                       <div style={{ color: 'var(--text-muted)' }}>
                         {formatDistanceToNow(new Date(alert.timestamp), { addSuffix: true })}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs max-w-xs truncate" style={{ color: 'var(--text-muted)' }}>
+                    <td className="px-3 py-1.5 text-[10px] max-w-xs truncate" style={{ color: 'var(--text-muted)' }}>
                       {alert.details || '—'}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-1.5">
                       {alert.resolved
-                        ? <span className="tag tag-green flex items-center gap-1"><CheckCircle2 size={10} />Resolved</span>
-                        : <span className="tag tag-red flex items-center gap-1"><AlertTriangle size={10} />Active</span>
+                        ? <span className="tag tag-green flex items-center gap-1"><CheckCircle2 size={9} />Resolved</span>
+                        : <span className="tag tag-red flex items-center gap-1"><AlertTriangle size={9} />Active</span>
                       }
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-3 py-1.5">
                       {!alert.resolved && canResolve && (
                         <button
                           id={`resolve-btn-${alert.id}`}
                           onClick={() => handleResolve(alert.id)}
                           disabled={resolving === alert.id}
-                          className="btn-secondary py-1 px-3 text-xs flex items-center gap-1"
+                          className="btn-secondary py-0.5 px-2 text-[10px] flex items-center gap-1"
                         >
                           {resolving === alert.id
-                            ? <RadarLoader size={11} />
-                            : <CheckCircle2 size={11} />
+                            ? <RadarLoader size={10} />
+                            : <CheckCircle2 size={10} />
                           }
                           Resolve
                         </button>

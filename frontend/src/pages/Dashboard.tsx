@@ -280,7 +280,7 @@ export default function Dashboard() {
         >
           <div className="flex items-center gap-2">
             <span className="status-dot alert" />
-            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Live Alert Feed</span>
+            <span className="text-[14px] font-bold" style={{ color: 'var(--text-primary)' }}>Live Alert Feed</span>
           </div>
           <button
             id="refresh-alerts"
@@ -418,7 +418,7 @@ export default function Dashboard() {
 
             <span
               className="text-[12px] px-1.5 py-0.5 rounded-full"
-              style={{ background: '#D9F1E5', color: '#087447', fontWeight: 700 }}
+              style={{ background: '#D9F1E5', color: '#087447', fontWeight: 600 }}
             >
               {metrics ? 'ONLINE' : 'CONNECTING'}
             </span>
@@ -436,13 +436,13 @@ export default function Dashboard() {
                   style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 10, boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)' }}
                 >
                   <div
-                    className="text-[13px]"
+                    className="text-[12px]"
                     style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     Frames Proc.
                   </div>
 
-                  <div className="font-mono text-[15px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
+                  <div className="font-mono text-[14px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.anpr.frames_processed}
                   </div>
                 </div>
@@ -454,13 +454,13 @@ export default function Dashboard() {
                   title="Average PaddleOCR confidence of accepted plate reads"
                 >
                   <div
-                    className="text-[13px]"
+                    className="text-[12px]"
                     style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     Accepted Confidence
                   </div>
 
-                  <div className="font-mono text-[15px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
+                  <div className="font-mono text-[14px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.anpr.accepted_read_confidence}%
                   </div>
                 </div>
@@ -472,13 +472,13 @@ export default function Dashboard() {
                   title="Number of license-plate detections produced by YOLO"
                 >
                   <div
-                    className="text-[13px]"
+                    className="text-[12px]"
                     style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     YOLO Detections
                   </div>
 
-                  <div className="font-mono text-[15px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
+                  <div className="font-mono text-[14px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.anpr.plates_detected}
                   </div>
                 </div>
@@ -489,13 +489,13 @@ export default function Dashboard() {
                   style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 10, boxShadow: '0 3px 12px rgba(20, 60, 45, 0.10)' }}
                 >
                   <div
-                    className="text-[13px]"
+                    className="text-[12px]"
                     style={{ color: '#365B4D', fontWeight: 600 }}
                   >
                     Active Cameras (30s)
                   </div>
 
-                  <div className="font-mono text-[15px]" style={{ fontWeight: 700 }}>
+                  <div className="font-mono text-[14px]" style={{ fontWeight: 700 }}>
                     <span style={{ color: '#18A66A' }}>{metrics.cameras.active_now}</span>
                     <span style={{ color: '#17352B' }}> / {metrics.cameras.registered}</span>
                   </div>
@@ -510,27 +510,27 @@ export default function Dashboard() {
               >
                 {/* YOLO Latency */}
                 <div className="p-1 text-center" style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 8 }}>
-                  <div className="text-[10px]" style={{ fontWeight: 600 }}>YOLO</div>
+                  <div className="text-[11px]" style={{ fontWeight: 600 }}>YOLO</div>
 
-                  <span className="font-mono" style={{ color: '#0F5C42', fontWeight: 700 }}>
+                  <span className="font-mono text-[13px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.latency.detection_ms}ms
                   </span>
                 </div>
 
                 {/* OCR Latency */}
                 <div className="p-1 text-center" style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 8 }}>
-                  <div className="text-[10px]" style={{ fontWeight: 600 }}>OCR</div>
+                  <div className="text-[11px]" style={{ fontWeight: 600 }}>OCR</div>
 
-                  <span className="font-mono" style={{ color: '#0F5C42', fontWeight: 700 }}>
+                  <span className="font-mono text-[13px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.latency.ocr_ms}ms
                   </span>
                 </div>
 
                 {/* Pipeline Latency */}
                 <div className="p-1 text-center" style={{ background: '#FFFFFF', border: '1px solid #B8C9C0', borderRadius: 8 }}>
-                  <div className="text-[10px]" style={{ fontWeight: 600 }}>Pipeline</div>
+                  <div className="text-[11px]" style={{ fontWeight: 600 }}>Pipeline</div>
 
-                  <span className="font-mono" style={{ color: '#0F5C42', fontWeight: 700 }}>
+                  <span className="font-mono text-[13px]" style={{ color: '#0F5C42', fontWeight: 700 }}>
                     {metrics.latency.pipeline_ms}ms
                   </span>
                 </div>

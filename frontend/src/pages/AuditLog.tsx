@@ -48,13 +48,13 @@ export default function AuditLog() {
               <ClipboardList size={18} style={{ color: 'var(--accent-blue-light)' }} />
               Audit Log
             </h1>
-            <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
               Every vehicle search, blacklist change, and alert action — who, what, when.
             </p>
           </div>
           <div className="flex items-center gap-2">
             <select
-              className="text-xs rounded px-2 py-1.5 outline-none"
+              className="text-[13px] rounded px-2 py-1.5 outline-none"
               style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}
               value={actionFilter}
               onChange={e => setActionFilter(e.target.value)}
@@ -77,13 +77,13 @@ export default function AuditLog() {
               <RadarLoader size={18} /> Loading…
             </div>
           ) : entries.length === 0 ? (
-            <div className="text-center py-10 text-sm" style={{ color: 'var(--text-muted)' }}>No audit entries match this filter.</div>
+            <div className="text-center py-10 text-[13px]" style={{ color: 'var(--text-muted)' }}>No audit entries match this filter.</div>
           ) : (
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px]">
               <thead>
                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-secondary)' }}>
                   {['Time', 'User', 'Action', 'Target', 'Details'].map(h => (
-                    <th key={h} className="text-left px-5 py-2 text-xs font-semibold" style={{ color: 'var(--text-muted)' }}>{h}</th>
+                    <th key={h} className="text-left px-5 py-2 text-xs font-bold" style={{ color: 'var(--text-muted)' }}>{h}</th>
                   ))}
                 </tr>
               </thead>

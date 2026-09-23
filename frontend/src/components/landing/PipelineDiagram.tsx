@@ -56,13 +56,13 @@ function Step({
         />
       )}
       <div
-        className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-semibold mb-5 relative z-10"
+        className="w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-semibold mb-5 relative z-10"
         style={{ background: 'var(--landing-bg)', border: '1px solid var(--landing-ink)', color: 'var(--landing-ink)' }}
       >
         {index}
       </div>
-      <h3 className="text-lg mb-2">{title}</h3>
-      <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--landing-ink-soft)' }}>
+      <h3 className="text-[14px] mb-2">{title}</h3>
+      <p className="text-[13px] leading-relaxed mb-4" style={{ color: 'var(--landing-ink-soft)' }}>
         {body}
       </p>
       <code
@@ -92,8 +92,8 @@ export default function PipelineDiagram() {
           <div className="text-xs tracking-[0.2em] mb-4" style={{ color: 'var(--landing-ink-faint)' }}>
             PIPELINE
           </div>
-          <h2 className="text-3xl md:text-4xl mb-4">How a plate becomes a route</h2>
-          <p className="text-base" style={{ color: 'var(--landing-ink-soft)' }}>
+          <h2 className="text-[18px] mb-4">How a plate becomes a route</h2>
+          <p className="text-[13px]" style={{ color: 'var(--landing-ink-soft)' }}>
             Four real, running stages — each one is an actual module in the codebase,
             not a conceptual diagram.
           </p>

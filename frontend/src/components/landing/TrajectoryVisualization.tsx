@@ -48,8 +48,8 @@ export default function TrajectoryVisualization() {
           <div className="text-xs tracking-[0.2em] mb-4" style={{ color: 'var(--landing-ink-faint)' }}>
             LIVE TRAJECTORY
           </div>
-          <h2 className="text-3xl md:text-4xl mb-4">Watching a route get reconstructed</h2>
-          <p className="text-base" style={{ color: 'var(--landing-ink-soft)' }}>
+          <h2 className="text-[18px] mb-4">Watching a route get reconstructed</h2>
+          <p className="text-[13px]" style={{ color: 'var(--landing-ink-soft)' }}>
             Plate <code style={{ fontFamily: "'JetBrains Mono', monospace" }}>{EXAMPLE_ROUTE.plate}</code> was
             read by the pipeline at three different cameras during a real ingestion run — not simulated,
             not from the demo seed script. This is that match, replayed.
@@ -153,7 +153,7 @@ export default function TrajectoryVisualization() {
                     STOP {i + 1} · {node.name}
                   </div>
                   <div
-                    className="text-lg mb-1"
+                    className="text-[13px] font-bold mb-1"
                     style={{ fontFamily: "'JetBrains Mono', monospace" }}
                   >
                     {EXAMPLE_ROUTE.plate}

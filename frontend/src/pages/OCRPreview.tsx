@@ -203,7 +203,7 @@ export default function OCRPreview() {
             <ScanLine size={18} style={{ color: 'var(--accent-blue-light)' }} />
             OCR Preview
           </h1>
-          <p className="text-sm mt-1.5" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-[12px] mt-1.5" style={{ color: 'var(--text-muted)' }}>
             Watch the ANPR pipeline detect and read plates frame-by-frame — the same detector, OCR model,
             and format validation that runs in production, visualized.
           </p>
@@ -220,7 +220,7 @@ export default function OCRPreview() {
               onChange={e =>
                 setCameraId(e.target.value)
               }
-              className="text-sm rounded px-3 py-2 outline-none flex-1"
+              className="text-[13px] rounded px-3 py-2 outline-none flex-1"
               style={{
                 background: 'var(--bg-card)',
                 border: '1px solid var(--border)',
@@ -358,7 +358,7 @@ export default function OCRPreview() {
                 className="mb-3 opacity-30"
               />
 
-              <div className="text-sm">
+              <div className="text-[13px]">
                 Pick a camera and click Generate Preview,
                 or upload any video
               </div>
@@ -514,7 +514,6 @@ export default function OCRPreview() {
                             key={i}
                             className="inline-flex items-center gap-1.5 plate-badge"
                             style={{
-                              fontSize: '0.7rem',
                               padding: '2px 8px',
                             }}
                           >
@@ -548,7 +547,7 @@ export default function OCRPreview() {
 
             {/* Recognized plates sidebar */}
             <div className="glass-card p-4 flex flex-col">
-              <div className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+              <div className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
                 Recognized Plates ({manifest.plates.length})
               </div>
               <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0">
@@ -565,7 +564,6 @@ export default function OCRPreview() {
                       <span
                         className="plate-badge"
                         style={{
-                          fontSize: '0.7rem',
                           padding: '2px 8px',
                         }}
                       >

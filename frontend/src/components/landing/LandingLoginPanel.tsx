@@ -88,10 +88,10 @@ export default function LandingLoginPanel() {
     return (
       <FramedPanel>
         <div className="text-[#9ecf8c] text-[11px] tracking-[0.14em] mb-2">SIGNED IN</div>
-        <div className="text-white text-lg font-medium mb-6">{user.username}</div>
+        <div className="text-white text-[14px] font-bold mb-6">{user.username}</div>
         <button
           onClick={() => navigate('/dashboard')}
-          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-opacity hover:opacity-90"
+          className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 text-[13px] font-semibold transition-opacity hover:opacity-90"
           style={buttonStyle}
         >
           Go to Dashboard
@@ -111,7 +111,7 @@ export default function LandingLoginPanel() {
           <Eye size={16} color="white" />
         </div>
         <div className="leading-tight">
-          <div className="text-white text-sm font-medium">Operator Sign In</div>
+          <div className="text-white text-[14px] font-bold">Operator Sign In</div>
           <div className="text-[#9ecf8c]/70 text-[11px] tracking-wide">Access the live dashboard</div>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function LandingLoginPanel() {
             placeholder="Username"
             value={username}
             onChange={e => setUsername(e.target.value)}
-            className="w-full pl-10 pr-3.5 py-3 text-sm text-white placeholder-white/35 outline-none transition-colors focus:border-[#6b9959]"
+            className="w-full pl-10 pr-3.5 py-3 text-[13px] text-white placeholder-white/35 outline-none transition-colors focus:border-[#6b9959]"
             style={fieldStyle}
           />
         </div>
@@ -136,7 +136,7 @@ export default function LandingLoginPanel() {
             placeholder="Password"
             value={password}
             onChange={e => setPassword(e.target.value)}
-            className="w-full pl-10 pr-10 py-3 text-sm text-white placeholder-white/35 outline-none transition-colors focus:border-[#6b9959]"
+            className="w-full pl-10 pr-10 py-3 text-[13px] text-white placeholder-white/35 outline-none transition-colors focus:border-[#6b9959]"
             style={fieldStyle}
           />
           <button
@@ -153,7 +153,7 @@ export default function LandingLoginPanel() {
           id="landing-login-submit"
           type="submit"
           disabled={submitting || !username.trim() || !password}
-          className="mt-1.5 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
+          className="mt-1.5 inline-flex items-center justify-center gap-2 px-4 py-3 text-[13px] font-semibold transition-opacity hover:opacity-90 disabled:opacity-50"
           style={buttonStyle}
         >
           <LogIn size={14} />
