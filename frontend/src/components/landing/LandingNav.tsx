@@ -22,7 +22,7 @@ export default function LandingNav() {
         </div>
         {/* TODO: swap href for the real repo URL once provided */}
         <a
-          href="#"
+          href="https://github.com/sam28iksha/AankhoDekha"
           target="_blank"
           rel="noreferrer"
           className="flex items-center gap-1.5 text-[13px] font-semibold tracking-wide text-white/70 hover:text-white transition-colors border border-white/30 px-3 py-1.5"
