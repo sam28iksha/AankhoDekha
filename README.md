@@ -10,7 +10,10 @@
 
 ## 🚀 Live Prototype
 
+*🎥 Demo Video:* [Watch the AankhoDekha Demo on YouTube]https://youtu.be/wvSjrwR0wNw?si=nLNq-PNcOxDCLl3P
+
 **Live Demo:** http://54.146.92.165
+
 
 The application is deployed on **AWS EC2** using Docker Compose.
 
