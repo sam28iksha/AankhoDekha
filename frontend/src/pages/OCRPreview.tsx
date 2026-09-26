@@ -175,8 +175,33 @@ export default function OCRPreview() {
     }
   }, [playing, manifest])
 
+  // Preload every frame image into the browser's HTTP cache as soon as the
+  // manifest is ready, rather than only fetching each one right as playback
+  // reaches it — a network round-trip per frame is what was causing
+  // playback to stutter, even after the frames themselves were shrunk.
+  // Letting the browser fetch them all in the background (it naturally
+  // parallelizes and rate-limits this) means most frames are already
+  // cached by the time the scrubber/play loop actually needs them.
+  useEffect(() => {
+    if (!manifest) return
+
+    manifest.frames.forEach(f => {
+      const img = new Image()
+      img.src = previewAssetUrl(f.url)
+    })
+  }, [manifest])
+
   const currentFrame =
     manifest?.frames[frameIndex]
+
+  // Recognized Plates (sidebar) should only list plates whose detection
+  // timestamp has actually been reached by the current playback position —
+  // otherwise every plate in the clip appears immediately once processing
+  // finishes, before the video has visually shown any of them being read.
+  const visiblePlates =
+    manifest?.plates.filter(
+      p => p.t <= (currentFrame?.t ?? 0),
+    ) ?? []
 
   const jumpToTime = (t: number) => {
     if (!manifest) return
@@ -552,13 +577,13 @@ export default function OCRPreview() {
             {/* Recognized plates sidebar */}
             <div className="glass-card p-4 flex flex-col">
               <div className="text-sm font-bold mb-3" style={{ color: 'var(--text-primary)' }}>
-                Recognized Plates ({manifest.plates.length})
+                Recognized Plates ({visiblePlates.length})
               </div>
               <div className="flex flex-col gap-2 overflow-y-auto flex-1 min-h-0">
-                {manifest.plates.length === 0 ? (
+                {visiblePlates.length === 0 ? (
                   <div className="text-xs" style={{ color: 'var(--text-muted)' }}>No plate cleared format validation in this clip.</div>
                 ) : (
-                  manifest.plates.map((p, i) => (
+                  visiblePlates.map((p, i) => (
                     <button
                       key={i}
                       onClick={() => jumpToTime(p.t)}

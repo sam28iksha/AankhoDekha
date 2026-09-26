@@ -66,6 +66,12 @@ _preview_status: dict[str, dict] = {}
 
 PREVIEW_ROOT = Path(settings.SNAPSHOTS_DIR).parent / "previews"
 
+# Saved preview frames are for browser playback only (detection/OCR already
+# ran on the full-resolution frame) — capped well below source resolution
+# (up to 4K) so an 8fps slideshow doesn't have to fetch ~1MB per frame.
+PREVIEW_MAX_WIDTH = 960
+PREVIEW_JPEG_QUALITY = 80
+
 _VIDEO_EXTS = {
     ".mp4",
     ".avi",
@@ -613,6 +619,14 @@ async def _render_preview(
             # -----------------------------------------------------------
             # 7. Save annotated frame
             # -----------------------------------------------------------
+            # Detection/OCR already ran on the full-resolution frame above —
+            # this copy is only for human playback in the OCR Preview page,
+            # so it's downscaled + JPEG-compressed for that purpose. Source
+            # videos run up to 4K, and cv2.imwrite's default quality (~95)
+            # on an unscaled frame produced ~1MB per frame — at the 8fps
+            # playback rate that's ~7.5MB/s the browser has to fetch
+            # continuously, which is what caused the "static/laggy" preview
+            # instead of smooth playback.
 
             saved_idx += 1
 
@@ -624,11 +638,22 @@ async def _render_preview(
                 out_dir / filename
             )
 
+            preview_frame = frame
+            frame_h, frame_w = frame.shape[:2]
+            if frame_w > PREVIEW_MAX_WIDTH:
+                scale = PREVIEW_MAX_WIDTH / frame_w
+                preview_frame = cv2.resize(
+                    frame,
+                    (PREVIEW_MAX_WIDTH, int(frame_h * scale)),
+                    interpolation=cv2.INTER_AREA,
+                )
+
             await loop.run_in_executor(
                 None,
                 cv2.imwrite,
                 str(output_path),
-                frame,
+                preview_frame,
+                [cv2.IMWRITE_JPEG_QUALITY, PREVIEW_JPEG_QUALITY],
             )
 
             # -----------------------------------------------------------
